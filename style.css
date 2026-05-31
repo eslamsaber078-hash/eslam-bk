@@ -2601,35 +2601,47 @@ body[dir="rtl"] .toast-notification {
     min-height: 0;
 }
 
-/* Mobile filter responsive */
+/* Mobile filter responsive - Scrollable layout with fixed sizes to prevent touch stutters/stuck clicks on mobile */
 @media (max-width: 768px) {
     .filter-tabs-container {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: center;
+        width: 100%;
+        gap: 12px;
     }
     .filter-tabs {
         width: 100%;
-        justify-content: center;
-        gap: 6px;
-        padding: 5px;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 8px;
+        padding: 6px;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        scrollbar-width: none; /* Hide scrollbar for Firefox */
+        -ms-overflow-style: none; /* Hide scrollbar for IE/Edge */
+        -webkit-overflow-scrolling: touch; /* Smooth inertial scrolling on iOS */
+    }
+    .filter-tabs::-webkit-scrollbar {
+        display: none; /* Hide scrollbar for Chrome/Safari */
     }
     .filter-tab {
-        padding: 9px 14px;
+        padding: 10px 18px;
         font-size: 0.82rem;
-        gap: 5px;
+        gap: 6px;
+        flex: 0 0 auto; /* Stop tab shrink to keep static touch target size */
     }
     .filter-tab span {
-        display: none;
+        display: inline !important; /* Always show text to eliminate layout shift widths on click/hover */
     }
     .filter-tab i {
-        font-size: 1rem;
-    }
-    .filter-tab.active span,
-    .filter-tab:hover span {
-        display: inline;
+        font-size: 0.85rem;
     }
     .scroll-down-indicator {
-        margin-bottom:-40px;
+        margin-bottom: -40px;
+    }
+    .filter-count-badge {
+        margin: 0 auto;
     }
 }
 
