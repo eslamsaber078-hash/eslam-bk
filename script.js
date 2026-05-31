@@ -173,6 +173,18 @@ document.addEventListener('DOMContentLoaded', () => {
             "p-web-live": "موقع ويب يعمل على جميع المتصفحات والأجهزة.",
             "p-flutter-info": "يعمل على Android و iOS بكود موحد.",
             "btn-preview": "معاينة مباشرة",
+            "footer-tagline": "مطور متكامل | خبير مصرفي | صانع تجارب رقمية",
+            "footer-nav-title": "روابط سريعة",
+            "footer-contact-title": "معلومات التواصل",
+            "footer-location": "جمهورية مصر العربية",
+            "footer-copy-text": "جميع الحقوق محفوظة",
+            "intro-tagline": "مطور تطبيقات & مواقع ويب",
+            "intro-loading-text": "جاري التحميل...",
+            "fact-age-val": "25 عاماً",
+            "fact-edu-val": "البرمجيات والأنظمة المصرفية",
+            "fact-loc-val": "جمهورية مصر العربية",
+            "fact-job-val": "خدمة عملاء بالبنك الأهلي المصري",
+            "cont-whatsapp-link": "راسلني الآن مباشرة",
         },
         en: {
             "nav-home": "Home",
@@ -265,6 +277,18 @@ document.addEventListener('DOMContentLoaded', () => {
             "p-web-live": "A web application that works across all browsers and devices.",
             "p-flutter-info": "Works on both Android and iOS with a single codebase.",
             "btn-preview": "Live Preview",
+            "footer-tagline": "Full Stack Developer | Banking Expert | Digital Experience Maker",
+            "footer-nav-title": "Quick Links",
+            "footer-contact-title": "Contact Information",
+            "footer-location": "Arab Republic of Egypt",
+            "footer-copy-text": "All Rights Reserved",
+            "intro-tagline": "Desktop & Web Developer",
+            "intro-loading-text": "Loading...",
+            "fact-age-val": "25 Years Old",
+            "fact-edu-val": "Software & Banking Systems",
+            "fact-loc-val": "Egypt",
+            "fact-job-val": "Customer Service Representative at NBE",
+            "cont-whatsapp-link": "Message me now directly",
         }
     };
 
@@ -346,9 +370,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
-        // Active node mapping
-        detectActiveSection();
-        
         isScrollScheduled = false;
     }
 
@@ -368,28 +389,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const sections = document.querySelectorAll('section');
     const navItems = document.querySelectorAll('.nav-item');
 
-    function detectActiveSection() {
-        if (sections.length === 0 || navItems.length === 0) return;
-        
-        let currentActiveId = 'home';
-        sections.forEach(sec => {
-            const top = window.scrollY;
-            const offset = sec.offsetTop - 180;
-            const height = sec.offsetHeight;
-            const id = sec.getAttribute('id');
-            
-            if (top >= offset && top < offset + height) {
-                currentActiveId = id;
+    // High-performance IntersectionObserver for active navigation highlight
+    // This replaces manual window.scrollY height comparisons, preventing scroll layout thrashing
+    const activeSectionObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const id = entry.target.getAttribute('id');
+                navItems.forEach(item => {
+                    item.classList.remove('active');
+                    if (item.getAttribute('href') === `#${id}`) {
+                        item.classList.add('active');
+                    }
+                });
             }
         });
-        
-        navItems.forEach(item => {
-            item.classList.remove('active');
-            if (item.getAttribute('href') === `#${currentActiveId}`) {
-                item.classList.add('active');
-            }
-        });
-    }
+    }, {
+        rootMargin: '-25% 0px -55% 0px' // Triggers active link when section occupies the main viewport region
+    });
+
+    sections.forEach(sec => {
+        if (sec.getAttribute('id')) {
+            activeSectionObserver.observe(sec);
+        }
+    });
 
     // 6. Safe Scroll Observer Reveal Elements
     const revealObserver = new IntersectionObserver((entries) => {
@@ -561,9 +583,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Cycle typing engine biculturally
         resetTyping();
-        
-        // Refresh viewport sections alignment
-        detectActiveSection();
 
         // Update filter count badge language
         const activeTabAfterLang = document.querySelector('.filter-tab.active');
@@ -701,7 +720,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 12. Run Safe Initialize Routines on load
-    const savedLanguage = localStorage.getItem('language') || 'ar';
+    const savedLanguage = localStorage.getItem('language') || 'en';
     setLanguage(savedLanguage);
 
     // 13. Project Filter Tabs System
@@ -887,19 +906,37 @@ document.addEventListener('DOMContentLoaded', () => {
     const glow2 = document.querySelector('.glow-circle-2');
 
     if (heroSection && glow1 && glow2) {
-        heroSection.addEventListener('mousemove', (e) => {
+        let isMouseScheduled = false;
+        let mouseX = 0;
+        let mouseY = 0;
+        
+        function updateGlowPosition() {
             const rect = heroSection.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
+            const x = mouseX - rect.left;
+            const y = mouseY - rect.top;
             
             const xPercent = (x / rect.width) * 100;
             const yPercent = (y / rect.height) * 100;
             
             glow1.style.transform = `translate(${xPercent * 0.15}px, ${yPercent * 0.15}px)`;
             glow2.style.transform = `translate(${-xPercent * 0.12}px, ${-yPercent * 0.12}px)`;
-        });
+            
+            isMouseScheduled = false;
+        }
+
+        heroSection.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            if (!isMouseScheduled) {
+                isMouseScheduled = true;
+                window.requestAnimationFrame(updateGlowPosition);
+            }
+        }, { passive: true });
         
         heroSection.addEventListener('mouseleave', () => {
+            if (isMouseScheduled) {
+                isMouseScheduled = false;
+            }
             glow1.style.transform = '';
             glow2.style.transform = '';
         });

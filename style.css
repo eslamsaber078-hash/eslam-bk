@@ -92,6 +92,7 @@
     align-items: baseline;
     gap: 10px;
     filter: drop-shadow(0 0 30px rgba(0, 242, 254, 0.45));
+    direction: ltr; /* Force LTR direction so brand logo doesn't read reversed in Arabic (RTL) mode */
 }
 
 .intro-logo-accent {

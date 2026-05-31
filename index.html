@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 
 <head>
     <meta charset="utf-8" />
@@ -16,8 +16,8 @@
     <!-- FontAwesome 6 for modern icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     
-    <!-- Custom stylesheet -->
-    <link rel="stylesheet" href="style.css" />
+    <!-- Custom stylesheet with cache buster -->
+    <link rel="stylesheet" href="style.css?v=1.4" />
 </head>
 
 <body class="dark-theme">
@@ -42,15 +42,15 @@
 
         <!-- Center logo content -->
         <div class="intro-center">
-            <div class="intro-logo">
+            <div class="intro-logo" dir="ltr">
                 <span class="intro-logo-accent">MR</span>
                 <span class="intro-logo-name">Eslam</span>
             </div>
-            <p class="intro-tagline">مطور تطبيقات &amp; مواقع ويب</p>
+            <p class="intro-tagline" data-key="intro-tagline">Desktop &amp; Web Developer</p>
             <div class="intro-progress-bar-wrap">
                 <div class="intro-progress-bar" id="introProgressBar"></div>
             </div>
-            <span class="intro-loading-text">جاري التحميل...</span>
+            <span class="intro-loading-text" data-key="intro-loading-text">Loading...</span>
         </div>
     </div>
     <!-- END INTRO SCREEN -->
@@ -75,7 +75,7 @@
                 <!-- Language Switcher Button -->
                 <button id="langToggleBtn" class="action-btn lang-btn" aria-label="Change Language">
                     <i class="fa-solid fa-globe"></i>
-                    <span class="lang-text">EN</span>
+                    <span class="lang-text">AR</span>
                 </button>
                 
                 <!-- Dark/Light Mode Theme Toggle -->
@@ -414,10 +414,10 @@
                         </p>
                         
                         <div class="quick-facts-grid">
-                            <div class="fact-item"><i class="fa-solid fa-circle-check"></i> <strong data-key="fact-age">العمر:</strong> 25 عاماً</div>
-                            <div class="fact-item"><i class="fa-solid fa-circle-check"></i> <strong data-key="fact-edu">الشغف:</strong> البرمجيات والأنظمة المصرفية</div>
-                            <div class="fact-item"><i class="fa-solid fa-circle-check"></i> <strong data-key="fact-loc">الموقع:</strong> جمهورية مصر العربية</div>
-                            <div class="fact-item"><i class="fa-solid fa-circle-check"></i> <strong data-key="fact-job">العمل الحالي:</strong> خدمة عملاء بالبنك الأهلي المصري</div>
+                            <div class="fact-item"><i class="fa-solid fa-circle-check"></i> <strong data-key="fact-age">العمر:</strong> <span data-key="fact-age-val">25 عاماً</span></div>
+                            <div class="fact-item"><i class="fa-solid fa-circle-check"></i> <strong data-key="fact-edu">الشغف:</strong> <span data-key="fact-edu-val">البرمجيات والأنظمة المصرفية</span></div>
+                            <div class="fact-item"><i class="fa-solid fa-circle-check"></i> <strong data-key="fact-loc">الموقع:</strong> <span data-key="fact-loc-val">جمهورية مصر العربية</span></div>
+                            <div class="fact-item"><i class="fa-solid fa-circle-check"></i> <strong data-key="fact-job">العمل الحالي:</strong> <span data-key="fact-job-val">خدمة عملاء بالبنك الأهلي المصري</span></div>
                         </div>
                     </div>
                 </div>
@@ -826,7 +826,7 @@
                             </div>
                             <div class="contact-box-content">
                                 <h3 data-key="cont-whatsapp">تواصل عبر واتساب</h3>
-                                <a href="https://wa.me/201096726081" target="_blank" rel="noopener" class="contact-link">راسلني الآن مباشرة</a>
+                                <a href="https://wa.me/201096726081" target="_blank" rel="noopener" class="contact-link" data-key="cont-whatsapp-link">راسلني الآن مباشرة</a>
                             </div>
                         </div>
                     </div>
@@ -918,7 +918,7 @@
 
             <!-- Footer Bottom Bar -->
             <div class="footer-bottom-bar">
-                <p class="footer-copy">جميع الحقوق محفوظة © <span id="currentYear">2026</span> — <span class="footer-brand">MR Eslam.bk</span></p>
+                <p class="footer-copy"><span data-key="footer-copy-text">All Rights Reserved</span> © <span id="currentYear">2026</span> — <span class="footer-brand">MR Eslam.bk</span></p>
                 <button id="scrollToTopBtn" class="scroll-top-btn" aria-label="Scroll to Top">
                     <i class="fa-solid fa-arrow-up-long"></i>
                 </button>
@@ -953,8 +953,8 @@
         </div>
     </div>
 
-    <!-- Script loading -->
-    <script src="script.js"></script>
+    <!-- Script loading with cache buster -->
+    <script src="script.js?v=1.4"></script>
 </body>
 
 </html>
