@@ -168,7 +168,13 @@ document.addEventListener('DOMContentLoaded', () => {
             "filter-flutter": "Flutter",
             "p9-title": "موقع البورتفوليو الشخصي",
             "p9-desc": "تصميم وبرمجة موقع بورتفوليو شخصي احترافي يعرض المشاريع والمهارات بتصميم عصري ثنائي اللغة مع وضع ليلي ونهاري.",
+            "p11-desc": "تصميم موقع لمطعم خرافي يعرض قوائم الطعام بشكل ملفت وجزاب.",
+            "p12-desc": "متجر الكتروني لبيع الاحذيه والملابس الانيقه والبناطيل والاكسسوارات.",
+            "p13-desc":"متجر الكتروني لبيع العقارات ذو مزايا وتفضيلات ومقارنات.",
             "p10-title": "تطبيق موبايل بـ Flutter",
+            "p11-title": "تصميم موقع مطعم",
+            "p12-title": "موقع احذية و ملابس",
+            "p13-title":"موقع بيع عقارات",
             "p10-desc": "تطبيق جوال متكامل تم بناؤه بإطار عمل Flutter مع تصميم عصري وواجهة مستخدم سلسة تعمل على Android و iOS.",
             "p-web-live": "موقع ويب يعمل على جميع المتصفحات والأجهزة.",
             "p-flutter-info": "يعمل على Android و iOS بكود موحد.",
@@ -272,7 +278,13 @@ document.addEventListener('DOMContentLoaded', () => {
             "filter-flutter": "Flutter",
             "p9-title": "Personal Portfolio Website",
             "p9-desc": "Design and development of a professional personal portfolio site with dual-language support, dark/light mode and modern UI.",
+            "p11-desc": "Designing a website for a fantastic restaurant that displays the menus in an eye-catching and attractive way.",
+            "p12-desc": "An online store selling shoes, stylish clothes, pants, and accessories.",
+            "p13-desc":"An online real estate marketplace with features, preferences, and comparisons.",
             "p10-title": "Mobile App with Flutter",
+            "p11-title": "Restaurant website design",
+            "p12-title": "Footwear and Clothing Website",
+            "p13-title":"Real estate selling website",
             "p10-desc": "A full-featured mobile application built with Flutter framework, featuring modern design and smooth UI running on Android & iOS.",
             "p-web-live": "A web application that works across all browsers and devices.",
             "p-flutter-info": "Works on both Android and iOS with a single codebase.",
@@ -584,19 +596,27 @@ document.addEventListener('DOMContentLoaded', () => {
         // Cycle typing engine biculturally
         resetTyping();
 
-        // Update filter count badge language
-        const activeTabAfterLang = document.querySelector('.filter-tab.active');
-        if (activeTabAfterLang) {
-            const currentFilter = activeTabAfterLang.getAttribute('data-filter');
-            const cards = document.querySelectorAll('.project-card[data-category]');
-            const visible = Array.from(cards).filter(c => {
-                return currentFilter === 'all' || c.getAttribute('data-category') === currentFilter;
-            }).length;
-            const badge = document.getElementById('filterCountBadge');
-            if (badge) {
-                badge.textContent = lang === 'en'
-                    ? `${visible} Project${visible !== 1 ? 's' : ''}`
-                    : `${visible} مشروع`;
+        // Update filter count badge + Load More button label after language change
+        const cards = document.querySelectorAll('.project-card[data-category]');
+        const visibleNow = Array.from(cards).filter(c =>
+            !c.classList.contains('filter-hidden') && !c.classList.contains('load-more-hidden')
+        ).length;
+        const badge = document.getElementById('filterCountBadge');
+        if (badge) {
+            badge.textContent = lang === 'en'
+                ? `${visibleNow} Project${visibleNow !== 1 ? 's' : ''}`
+                : `${visibleNow} مشروع`;
+        }
+
+        // Re-label existing Load More button if present
+        const loadMoreBtn = document.getElementById('loadMoreProjectsBtn');
+        if (loadMoreBtn) {
+            const hiddenCount = Array.from(cards).filter(c => c.classList.contains('load-more-hidden')).length;
+            const span = loadMoreBtn.querySelector('span');
+            if (span) {
+                span.textContent = lang === 'en'
+                    ? `Load More (${hiddenCount} remaining)`
+                    : `عرض المزيد (${hiddenCount} متبقي)`;
             }
         }
     }
@@ -727,6 +747,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const filterTabs = document.querySelectorAll('.filter-tab');
     const projectCards = document.querySelectorAll('.project-card[data-category]');
     const filterCountBadge = document.getElementById('filterCountBadge');
+    const projectsGrid = document.querySelector('.projects-grid');
+    const LOAD_MORE_LIMIT = 10; // Cards shown initially in "all" tab
+    let currentFilter = 'all';
 
     function updateFilterCount(visibleCount, lang) {
         if (!filterCountBadge) return;
@@ -735,20 +758,70 @@ document.addEventListener('DOMContentLoaded', () => {
             : `${visibleCount} مشروع`;
     }
 
-    function applyFilter(filterValue) {
-        let visibleCount = 0;
+    function removeLoadMoreBtn() {
+        const existing = document.getElementById('loadMoreProjectsBtn');
+        if (existing) existing.remove();
+    }
 
-        projectCards.forEach(card => {
-            const category = card.getAttribute('data-category');
-            const shouldShow = filterValue === 'all' || category === filterValue;
-
-            if (shouldShow) {
-                card.classList.remove('filter-hidden');
-                visibleCount++;
-            } else {
-                card.classList.add('filter-hidden');
-            }
+    function createLoadMoreBtn(remaining) {
+        removeLoadMoreBtn();
+        const btn = document.createElement('button');
+        btn.id = 'loadMoreProjectsBtn';
+        btn.className = 'load-more-btn';
+        btn.setAttribute('data-key', 'load-more-btn');
+        const label = currentLanguage === 'en'
+            ? `Load More (${remaining} remaining)`
+            : `عرض المزيد (${remaining} متبقي)`;
+        btn.innerHTML = `<span>${label}</span><i class="fa-solid fa-chevron-down"></i>`;
+        btn.addEventListener('click', () => {
+            // Reveal all remaining "all" cards
+            projectCards.forEach(card => {
+                if (card.getAttribute('data-category') || true) {
+                    card.classList.remove('filter-hidden');
+                    card.classList.remove('load-more-hidden');
+                }
+            });
+            removeLoadMoreBtn();
+            // Update badge count to total
+            updateFilterCount(projectCards.length, currentLanguage);
         });
+        if (projectsGrid) projectsGrid.after(btn);
+    }
+
+    function applyFilter(filterValue) {
+        currentFilter = filterValue;
+        removeLoadMoreBtn();
+        let visibleCount = 0;
+        let hiddenByLimit = 0;
+
+        if (filterValue === 'all') {
+            // Show first LOAD_MORE_LIMIT, hide the rest behind "Load More"
+            projectCards.forEach((card, index) => {
+                card.classList.remove('filter-hidden');
+                if (index < LOAD_MORE_LIMIT) {
+                    card.classList.remove('load-more-hidden');
+                    visibleCount++;
+                } else {
+                    card.classList.add('load-more-hidden');
+                    hiddenByLimit++;
+                }
+            });
+            if (hiddenByLimit > 0) {
+                createLoadMoreBtn(hiddenByLimit);
+            }
+        } else {
+            projectCards.forEach(card => {
+                card.classList.remove('load-more-hidden');
+                const category = card.getAttribute('data-category');
+                const shouldShow = category === filterValue;
+                if (shouldShow) {
+                    card.classList.remove('filter-hidden');
+                    visibleCount++;
+                } else {
+                    card.classList.add('filter-hidden');
+                }
+            });
+        }
 
         updateFilterCount(visibleCount, currentLanguage);
     }
@@ -768,7 +841,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Initialize with all visible
+    // Initialize with all (limited)
     applyFilter('all');
 
     // 14. Scroll Down Indicator — hide after user scrolls past hero

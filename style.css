@@ -2686,3 +2686,96 @@ body[dir="rtl"] .toast-notification {
 .skills-wrapper .skills-category-card:nth-child(2) {
     transition-delay: 0.15s;
 }
+
+/* ============================================================
+   LOAD MORE HIDDEN UTILITY
+   ============================================================ */
+.load-more-hidden {
+    display: none !important;
+}
+
+/* ============================================================
+   LOAD MORE BUTTON — Projects Section
+   ============================================================ */
+.load-more-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 2.5rem auto 0;
+    padding: 0.85rem 2.4rem;
+    font-family: 'Outfit', 'Inter', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: #fff;
+    background: linear-gradient(135deg, rgba(0,242,254,0.15) 0%, rgba(79,172,254,0.15) 100%);
+    border: 1.5px solid rgba(0, 242, 254, 0.4);
+    border-radius: 50px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 0 18px rgba(0, 242, 254, 0.12), 0 4px 20px rgba(0,0,0,0.25);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+}
+
+.load-more-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(0,242,254,0.22) 0%, rgba(79,172,254,0.22) 100%);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.load-more-btn:hover {
+    transform: translateY(-3px);
+    border-color: rgba(0, 242, 254, 0.75);
+    box-shadow: 0 0 28px rgba(0, 242, 254, 0.28), 0 8px 28px rgba(0,0,0,0.3);
+}
+
+.load-more-btn:hover::before {
+    opacity: 1;
+}
+
+.load-more-btn:active {
+    transform: translateY(0);
+}
+
+.load-more-btn span {
+    position: relative;
+    z-index: 1;
+}
+
+.load-more-btn i {
+    position: relative;
+    z-index: 1;
+    font-size: 0.85rem;
+    animation: load-more-bounce 1.8s ease-in-out infinite;
+}
+
+@keyframes load-more-bounce {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(4px); }
+}
+
+/* Light theme variant */
+.light-theme .load-more-btn {
+    color: #0e172a;
+    background: linear-gradient(135deg, rgba(0,200,230,0.12) 0%, rgba(60,140,220,0.12) 100%);
+    border-color: rgba(0, 180, 210, 0.45);
+    box-shadow: 0 0 16px rgba(0, 180, 210, 0.1), 0 4px 16px rgba(0,0,0,0.1);
+}
+
+.light-theme .load-more-btn:hover {
+    border-color: rgba(0, 180, 210, 0.8);
+    box-shadow: 0 0 24px rgba(0, 180, 210, 0.22), 0 8px 24px rgba(0,0,0,0.12);
+}
+
+/* RTL support */
+[dir="rtl"] .load-more-btn {
+    flex-direction: row-reverse;
+}
+
