@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.scrollTo(0, 0);
     
     // 1. Language and Typewriter data setup
-    let currentLanguage = 'ar'; // Default language state
+    let currentLanguage = 'en'; // Default language state
     
     const rolesAR = [
         'مطور تطبيقات C# & WinForms',
