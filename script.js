@@ -457,6 +457,16 @@ document.addEventListener('DOMContentLoaded', () => {
         revealObserver.observe(card);
     });
 
+    // Observe stat cards for staggered reveal
+    document.querySelectorAll('.stat-card').forEach(card => {
+        revealObserver.observe(card);
+    });
+
+    // Observe project cards for staggered reveal
+    document.querySelectorAll('.project-card').forEach(card => {
+        revealObserver.observe(card);
+    });
+
     // Observe about intro box for split animation
     const aboutIntroBox = document.querySelector('.about-intro-box');
     if (aboutIntroBox) {
@@ -474,11 +484,54 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (themeToggleBtn) {
+        let isAnimating = false;
+
         themeToggleBtn.addEventListener('click', () => {
-            document.body.classList.toggle('light-theme');
-            document.body.classList.toggle('dark-theme');
-            const currentTheme = document.body.classList.contains('light-theme') ? 'light' : 'dark';
-            localStorage.setItem('theme', currentTheme);
+            if (isAnimating) return;
+            isAnimating = true;
+
+            // Get button center as the liquid origin point
+            const rect = themeToggleBtn.getBoundingClientRect();
+            const originX = Math.round(rect.left + rect.width / 2);
+            const originY = Math.round(rect.top + rect.height / 2);
+
+            const isLight = document.body.classList.contains('light-theme');
+            const nextTheme = isLight ? 'dark' : 'light';
+
+            // Liquid overlay background — radial gradient for a glowing core effect
+            const overlayBg = isLight
+                ? 'radial-gradient(circle at 40% 40%, #1a2744 0%, #0a1020 40%, #060913 100%)'
+                : 'radial-gradient(circle at 40% 40%, #ffffff 0%, #eef3fb 40%, #f6f9fc 100%)';
+
+            // Create the liquid overlay element
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed;
+                inset: 0;
+                z-index: 999999;
+                pointer-events: none;
+                background: ${overlayBg};
+                clip-path: circle(0px at ${originX}px ${originY}px);
+                will-change: clip-path;
+            `;
+            document.body.appendChild(overlay);
+
+            // Double rAF ensures the initial state is painted before animating
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    overlay.style.transition = 'clip-path 1s cubic-bezier(0.76, 0, 0.24, 1)';
+                    overlay.style.clipPath = `circle(200vmax at ${originX}px ${originY}px)`;
+                });
+            });
+
+            // Once liquid fully covers screen → switch theme → remove overlay instantly
+            overlay.addEventListener('transitionend', () => {
+                document.body.classList.toggle('light-theme');
+                document.body.classList.toggle('dark-theme');
+                localStorage.setItem('theme', nextTheme);
+                overlay.remove();
+                isAnimating = false;
+            }, { once: true });
         });
     }
 
@@ -947,7 +1000,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.showToastNotification = showToastNotification;
 
-    // 18. Prevent default anchor hash navigation under file:// protocol
+    // 18. Silky-smooth momentum scroll for all anchor links
+    // Uses a custom ease-out lerp loop — gives buttery deceleration on every click
+    let scrollTarget = null;
+    let scrollRafId   = null;
+
+    function lerpScroll() {
+        if (scrollTarget === null) return;
+        const current = window.scrollY;
+        const distance = scrollTarget - current;
+
+        // Stop when close enough (sub-pixel)
+        if (Math.abs(distance) < 0.5) {
+            window.scrollTo(0, scrollTarget);
+            scrollTarget = null;
+            scrollRafId  = null;
+            return;
+        }
+
+        // Lerp factor — higher = faster, lower = more floaty (0.09 = very smooth)
+        window.scrollTo(0, current + distance * 0.085);
+        scrollRafId = requestAnimationFrame(lerpScroll);
+    }
+
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
             e.preventDefault();
@@ -957,19 +1032,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (targetElement) {
                     const headerOffset = 80;
                     const elementPosition = targetElement.getBoundingClientRect().top;
-                    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-                    
-                    window.scrollTo({
-                        top: offsetPosition,
-                        behavior: 'smooth'
-                    });
+                    scrollTarget = elementPosition + window.pageYOffset - headerOffset;
+                } else {
+                    scrollTarget = 0;
                 }
             } else {
-                window.scrollTo({
-                    top: 0,
-                    behavior: 'smooth'
-                });
+                scrollTarget = 0;
             }
+
+            // Cancel any previous scroll loop before starting new one
+            if (scrollRafId) cancelAnimationFrame(scrollRafId);
+            scrollRafId = requestAnimationFrame(lerpScroll);
         });
     });
 
@@ -1044,5 +1117,111 @@ document.addEventListener('DOMContentLoaded', () => {
             particlesContainer.appendChild(particle);
         }
     }
+
+    // 21. High-Performance Stereoscopic 3D Parallax and Tilt on Profile Photo
+    const hero = document.getElementById('home');
+    const profileImg = document.querySelector('.profile-img');
+    const glowCircle = document.querySelector('.glowing-border-circle');
+    const profileWrapper = document.querySelector('.profile-image-wrapper');
+    const heroName = document.querySelector('.hero-name');
+
+    if (hero && profileImg && glowCircle && profileWrapper) {
+        let isScheduled = false;
+        let mX = 0, mY = 0;
+
+        hero.addEventListener('mousemove', (e) => {
+            if (window.innerWidth < 768) return; // Skip on mobile to keep it lightweight
+            mX = e.clientX;
+            mY = e.clientY;
+
+            if (!isScheduled) {
+                isScheduled = true;
+                requestAnimationFrame(() => {
+                    const rect = hero.getBoundingClientRect();
+                    const relX = mX - rect.left - rect.width / 2;
+                    const relY = mY - rect.top - rect.height / 2;
+
+                    const normX = relX / (rect.width / 2);
+                    const normY = relY / (rect.height / 2);
+
+                    // 3D Tilt angles (max 10 degrees) for the frame wrapper
+                    const tiltX = -normY * 10;
+                    const tiltY = normX * 10;
+
+                    // Parallax translations (image moves with mouse, glow moves opposite)
+                    const imgDist = 14;   // Max image shift
+                    const glowDist = -12; // Max glow shift in opposite direction
+
+                    const moveImgX = normX * imgDist;
+                    const moveImgY = normY * imgDist;
+                    const moveGlowX = normX * glowDist;
+                    const moveGlowY = normY * glowDist;
+
+                    // Pause the floaty animation so it doesn't conflict with active mouse movement
+                    profileWrapper.style.animation = 'none';
+
+                    // Apply 3D perspective and tilt to wrapper
+                    profileWrapper.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+
+                    // Pop the avatar forward and slide it towards the mouse in 3D space
+                    profileImg.style.transform = `translate3d(${moveImgX}px, ${moveImgY}px, 25px) scale(1.05)`;
+                    
+                    // Slide the rotating glow in the opposite direction
+                    glowCircle.style.transform = `translate3d(${moveGlowX}px, ${moveGlowY}px, 0)`;
+
+                    // 3D Extruded text shadow parallax for the title
+                    if (heroName) {
+                        const isLight = document.body.classList.contains('light-theme');
+                        
+                        // We project the shadow in the opposite direction of the mouse to simulate light source
+                        const shadowX = -normX * 8; 
+                        const shadowY = -normY * 8;
+
+                        if (isLight) {
+                            heroName.style.textShadow = `
+                                ${shadowX * 0.15}px ${shadowY * 0.15}px 0px rgba(2, 132, 199, 0.85),
+                                ${shadowX * 0.3}px ${shadowY * 0.3}px 0px rgba(2, 132, 199, 0.7),
+                                ${shadowX * 0.45}px ${shadowY * 0.45}px 0px rgba(37, 99, 235, 0.55),
+                                ${shadowX * 0.6}px ${shadowY * 0.6}px 0px rgba(37, 99, 235, 0.4),
+                                ${shadowX * 0.8}px ${shadowY * 0.8}px 8px rgba(0, 0, 0, 0.12)
+                            `;
+                        } else {
+                            heroName.style.textShadow = `
+                                ${shadowX * 0.15}px ${shadowY * 0.15}px 0px rgba(0, 242, 254, 0.9),
+                                ${shadowX * 0.3}px ${shadowY * 0.3}px 0px rgba(0, 242, 254, 0.75),
+                                ${shadowX * 0.45}px ${shadowY * 0.45}px 0px rgba(79, 172, 254, 0.6),
+                                ${shadowX * 0.6}px ${shadowY * 0.6}px 0px rgba(79, 172, 254, 0.45),
+                                ${shadowX * 0.8}px ${shadowY * 0.8}px 10px rgba(0, 0, 0, 0.55)
+                            `;
+                        }
+                    }
+                    
+                    isScheduled = false;
+                });
+            }
+        }, { passive: true });
+
+        hero.addEventListener('mouseleave', () => {
+            requestAnimationFrame(() => {
+                // Restore default smooth floaty state and reset 3D overrides
+                profileWrapper.style.transition = 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)';
+                profileWrapper.style.transform = '';
+                profileImg.style.transition    = 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)';
+                profileImg.style.transform = '';
+                glowCircle.style.transition    = 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)';
+                glowCircle.style.transform = '';
+                if (heroName) heroName.style.textShadow = '';
+
+                // Re-enable the float animation after the transition settles
+                setTimeout(() => {
+                    profileWrapper.style.transition = '';
+                    profileImg.style.transition    = '';
+                    glowCircle.style.transition    = '';
+                    profileWrapper.style.animation = 'floaty 6s ease-in-out infinite';
+                }, 820);
+            });
+        });
+    }
 });
+
 
