@@ -52,6 +52,78 @@ if (history.scrollRestoration) {
 }
 window.scrollTo(0, 0);
 
+// ============================================================
+//  SMOOTH SCROLL ENGINE  (Lenis-style, zero dependencies)
+//  Intercepts mouse-wheel events and animates with LERP + rAF
+//  Skipped on: touch devices, reduced-motion preference
+// ============================================================
+(function initSmoothScroll() {
+    // Skip on touch / mobile — native momentum scroll is better there
+    const isTouch = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isSmoothScrollActive = !isTouch && !prefersReduced;
+
+    const LERP    = 0.10;   // Smoothness factor  (lower = silkier, higher = snappier)
+    const STOP_AT = 0.5;    // Stop threshold in px
+
+    let targetY  = 0;
+    let currentY = 0;
+    let rafId    = null;
+
+    // Normalise wheel delta across all mouse types
+    function normaliseDelta(e) {
+        if (e.deltaMode === 1) return e.deltaY * 40;   // lines → px
+        if (e.deltaMode === 2) return e.deltaY * window.innerHeight; // pages → px
+        return e.deltaY;                                // already px
+    }
+
+    function tick() {
+        const diff = targetY - currentY;
+
+        if (Math.abs(diff) < STOP_AT) {
+            currentY = targetY;
+            window.scrollTo(0, currentY);
+            rafId = null;
+            return;
+        }
+
+        currentY += diff * LERP;
+        window.scrollTo(0, currentY);
+        rafId = requestAnimationFrame(tick);
+    }
+
+    if (isSmoothScrollActive) {
+        // Intercept wheel — prevent native scroll, drive our smooth engine
+        window.addEventListener('wheel', (e) => {
+            e.preventDefault();
+
+            const maxY = document.documentElement.scrollHeight - window.innerHeight;
+            targetY = Math.max(0, Math.min(maxY, targetY + normaliseDelta(e)));
+
+            if (!rafId) rafId = requestAnimationFrame(tick);
+        }, { passive: false });
+
+        // Keep engine in sync when scroll changes via keyboard / anchor links / scrollTo
+        window.addEventListener('scroll', () => {
+            if (rafId) return; // our animation owns the scroll — don't interfere
+            currentY = window.scrollY;
+            targetY  = window.scrollY;
+        }, { passive: true });
+    }
+
+    // Expose a global smooth scroll function
+    window.smoothScrollTo = function(y) {
+        if (!isSmoothScrollActive) {
+            window.scrollTo({ top: y, behavior: 'smooth' });
+            return;
+        }
+        const maxY = document.documentElement.scrollHeight - window.innerHeight;
+        targetY = Math.max(0, Math.min(maxY, y));
+        currentY = window.scrollY;
+        if (!rafId) rafId = requestAnimationFrame(tick);
+    };
+})();
+
 // Wrap entire script in DOMContentLoaded to prevent early selection errors or double typewriter calls.
 document.addEventListener('DOMContentLoaded', () => {
     // Ensure top position after DOM ready
@@ -394,7 +466,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (scrollToTopBtn) {
         scrollToTopBtn.addEventListener('click', () => {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            if (window.smoothScrollTo) {
+                window.smoothScrollTo(0);
+            } else {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
         });
     }
 
@@ -426,25 +502,49 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // 6. Safe Scroll Observer Reveal Elements
+    // Count-Up helper — animates a number from 0 to target over duration ms
+    function runCountUp(el, target, suffix, duration) {
+        const start = performance.now();
+        function easeOutExpo(t) { return t >= 1 ? 1 : 1 - Math.pow(2, -10 * t); }
+        function step(now) {
+            const progress = Math.min((now - start) / duration, 1);
+            const eased    = easeOutExpo(progress);
+            el.textContent = Math.round(eased * target) + suffix;
+            if (progress < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+    }
+
     const revealObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 entry.target.classList.add('revealed');
-                
+
+                // Count-Up on stat cards
+                if (entry.target.classList.contains('stat-card')) {
+                    const numEl = entry.target.querySelector('.stat-num');
+                    const raw   = entry.target.querySelector('.stat-num')?.getAttribute('data-val') || '0';
+                    const target = parseInt(raw, 10);
+                    const suffix = numEl?.textContent.replace(/[\d]/g, '') || '';
+                    if (numEl && target > 0) {
+                        numEl.textContent = '0' + suffix;
+                        setTimeout(() => runCountUp(numEl, target, suffix, 1500), 150);
+                    }
+                    return; // unobserve after count-up starts
+                }
+
                 // Animate skill progress bars upon reaching section
                 if (entry.target.id === 'skills') {
                     document.querySelectorAll('.skill-progress-bar-fill').forEach((fill, idx) => {
                         const widthVal = fill.style.width;
                         fill.style.width = '0';
-                        setTimeout(() => {
-                            fill.style.width = widthVal;
-                        }, 120 + idx * 80);
+                        setTimeout(() => { fill.style.width = widthVal; }, 120 + idx * 80);
                     });
                 }
             }
         });
     }, {
-        threshold: 0.05,
+        threshold: 0.15,
         rootMargin: '0px 0px -40px 0px'
     });
 
@@ -474,13 +574,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 7. Light and Dark Theme Controls
+    const metaThemeColor = document.getElementById('metaThemeColor');
+
+    function updateMetaThemeColor(isLight) {
+        if (metaThemeColor) {
+            metaThemeColor.setAttribute('content', isLight ? '#f6f9fc' : '#060913');
+        }
+    }
+
     const savedTheme = localStorage.getItem('theme') || 'dark';
     if (savedTheme === 'light') {
         document.body.classList.add('light-theme');
         document.body.classList.remove('dark-theme');
+        updateMetaThemeColor(true);
     } else {
         document.body.classList.add('dark-theme');
         document.body.classList.remove('light-theme');
+        updateMetaThemeColor(false);
     }
 
     if (themeToggleBtn) {
@@ -529,6 +639,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.body.classList.toggle('light-theme');
                 document.body.classList.toggle('dark-theme');
                 localStorage.setItem('theme', nextTheme);
+                updateMetaThemeColor(nextTheme === 'light');
                 overlay.remove();
                 isAnimating = false;
             }, { once: true });
@@ -844,53 +955,71 @@ document.addEventListener('DOMContentLoaded', () => {
     function applyFilter(filterValue) {
         currentFilter = filterValue;
         removeLoadMoreBtn();
-        let visibleCount = 0;
-        let hiddenByLimit = 0;
 
-        if (filterValue === 'all') {
-            // Show first LOAD_MORE_LIMIT, hide the rest behind "Load More"
-            projectCards.forEach((card, index) => {
-                card.classList.remove('filter-hidden');
-                if (index < LOAD_MORE_LIMIT) {
-                    card.classList.remove('load-more-hidden');
-                    visibleCount++;
-                } else {
-                    card.classList.add('load-more-hidden');
-                    hiddenByLimit++;
-                }
-            });
-            if (hiddenByLimit > 0) {
-                createLoadMoreBtn(hiddenByLimit);
-            }
-        } else {
-            projectCards.forEach(card => {
-                card.classList.remove('load-more-hidden');
-                const category = card.getAttribute('data-category');
-                const shouldShow = category === filterValue;
-                if (shouldShow) {
+        // Fade-out cards that are currently visible before applying new filter
+        const currentlyVisible = Array.from(projectCards).filter(
+            c => !c.classList.contains('filter-hidden') && !c.classList.contains('load-more-hidden')
+        );
+        currentlyVisible.forEach(c => {
+            c.classList.add('filter-exit');   // short 180ms transition
+            c.style.opacity = '0';
+            c.style.transform = 'translateY(12px) scale(0.97)';
+        });
+
+        // Apply filter classes after short fade-out, then fade new cards in
+        setTimeout(() => {
+            let visibleCount  = 0;
+            let hiddenByLimit = 0;
+
+            if (filterValue === 'all') {
+                projectCards.forEach((card, index) => {
                     card.classList.remove('filter-hidden');
-                    visibleCount++;
-                } else {
-                    card.classList.add('filter-hidden');
-                }
-            });
-        }
+                    if (index < LOAD_MORE_LIMIT) {
+                        card.classList.remove('load-more-hidden');
+                        visibleCount++;
+                    } else {
+                        card.classList.add('load-more-hidden');
+                        hiddenByLimit++;
+                    }
+                });
+                if (hiddenByLimit > 0) createLoadMoreBtn(hiddenByLimit);
+            } else {
+                projectCards.forEach(card => {
+                    card.classList.remove('load-more-hidden');
+                    const shouldShow = card.getAttribute('data-category') === filterValue;
+                    if (shouldShow) {
+                        card.classList.remove('filter-hidden');
+                        visibleCount++;
+                    } else {
+                        card.classList.add('filter-hidden');
+                    }
+                });
+            }
 
-        updateFilterCount(visibleCount, currentLanguage);
+            updateFilterCount(visibleCount, currentLanguage);
+
+            // Fade in the newly visible cards with staggered delay
+            const nowVisible = Array.from(projectCards).filter(
+                c => !c.classList.contains('filter-hidden') && !c.classList.contains('load-more-hidden')
+            );
+            nowVisible.forEach((card, i) => {
+                setTimeout(() => {
+                    card.style.opacity = '';
+                    card.style.transform = '';
+                }, i * 55);
+            });
+        }, 220);
     }
 
     filterTabs.forEach(tab => {
         tab.addEventListener('click', () => {
-            // Update active state
             filterTabs.forEach(t => {
                 t.classList.remove('active');
                 t.setAttribute('aria-selected', 'false');
             });
             tab.classList.add('active');
             tab.setAttribute('aria-selected', 'true');
-
-            const filterValue = tab.getAttribute('data-filter');
-            applyFilter(filterValue);
+            applyFilter(tab.getAttribute('data-filter'));
         });
     });
 
@@ -903,9 +1032,20 @@ document.addEventListener('DOMContentLoaded', () => {
         scrollDownIndicator.addEventListener('click', () => {
             const statsSection = document.querySelector('.stats-section');
             if (statsSection) {
-                statsSection.scrollIntoView({ behavior: 'smooth' });
+                const headerOffset = 80;
+                const offsetPosition = statsSection.getBoundingClientRect().top + window.pageYOffset - headerOffset;
+                if (window.smoothScrollTo) {
+                    window.smoothScrollTo(offsetPosition);
+                } else {
+                    statsSection.scrollIntoView({ behavior: 'smooth' });
+                }
             } else {
-                window.scrollBy({ top: window.innerHeight * 0.85, behavior: 'smooth' });
+                const offsetPosition = window.scrollY + window.innerHeight * 0.85;
+                if (window.smoothScrollTo) {
+                    window.smoothScrollTo(offsetPosition);
+                } else {
+                    window.scrollBy({ top: window.innerHeight * 0.85, behavior: 'smooth' });
+                }
             }
         });
     }
@@ -959,7 +1099,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (logoLink) {
         logoLink.addEventListener('click', (e) => {
             e.preventDefault();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            if (window.smoothScrollTo) {
+                window.smoothScrollTo(0);
+            } else {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
         });
     }
 
@@ -1000,49 +1144,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.showToastNotification = showToastNotification;
 
-    // 18. Silky-smooth momentum scroll for all anchor links
-    // Uses a custom ease-out lerp loop — gives buttery deceleration on every click
-    let scrollTarget = null;
-    let scrollRafId   = null;
-
-    function lerpScroll() {
-        if (scrollTarget === null) return;
-        const current = window.scrollY;
-        const distance = scrollTarget - current;
-
-        // Stop when close enough (sub-pixel)
-        if (Math.abs(distance) < 0.5) {
-            window.scrollTo(0, scrollTarget);
-            scrollTarget = null;
-            scrollRafId  = null;
-            return;
-        }
-
-        // Lerp factor — higher = faster, lower = more floaty (0.09 = very smooth)
-        window.scrollTo(0, current + distance * 0.085);
-        scrollRafId = requestAnimationFrame(lerpScroll);
-    }
-
+    // 18. Smooth anchor navigation — native scrollTo for optimal speed
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
             e.preventDefault();
             const targetId = this.getAttribute('href').substring(1);
+            const headerOffset = 80;
+
             if (targetId) {
                 const targetElement = document.getElementById(targetId);
                 if (targetElement) {
-                    const headerOffset = 80;
-                    const elementPosition = targetElement.getBoundingClientRect().top;
-                    scrollTarget = elementPosition + window.pageYOffset - headerOffset;
-                } else {
-                    scrollTarget = 0;
+                    const offsetPosition =
+                        targetElement.getBoundingClientRect().top + window.pageYOffset - headerOffset;
+                    if (window.smoothScrollTo) {
+                        window.smoothScrollTo(offsetPosition);
+                    } else {
+                        window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+                    }
                 }
             } else {
-                scrollTarget = 0;
+                if (window.smoothScrollTo) {
+                    window.smoothScrollTo(0);
+                } else {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
             }
-
-            // Cancel any previous scroll loop before starting new one
-            if (scrollRafId) cancelAnimationFrame(scrollRafId);
-            scrollRafId = requestAnimationFrame(lerpScroll);
         });
     });
 
@@ -1116,6 +1242,25 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             particlesContainer.appendChild(particle);
         }
+
+        // Optimization: Pause floating particles and floaty image animations when hero is offscreen to save CPU/GPU cycles
+        const profileWrapper = document.querySelector('.profile-image-wrapper');
+        const heroObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    particlesContainer.style.display = '';
+                    if (profileWrapper) {
+                        profileWrapper.style.animation = 'floaty 6s ease-in-out infinite';
+                    }
+                } else {
+                    particlesContainer.style.display = 'none';
+                    if (profileWrapper) {
+                        profileWrapper.style.animation = 'none';
+                    }
+                }
+            });
+        }, { threshold: 0 });
+        heroObserver.observe(heroSection);
     }
 
     // 21. High-Performance Stereoscopic 3D Parallax and Tilt on Profile Photo
