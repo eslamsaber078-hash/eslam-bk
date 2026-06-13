@@ -308,9 +308,6 @@ body[dir="ltr"] {
 
 .section-padding {
     padding: 100px 0;
-    /* Optimization: Skip rendering offscreen sections to save major browser memory and CPU cycles */
-    content-visibility: auto;
-    contain-intrinsic-size: auto 800px;
 }
 
 .text-center {
@@ -841,12 +838,13 @@ body[dir="ltr"] {
 .stat-card {
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
-    /* Optimization: Removed backdrop-filter to prevent heavy pixel blurs during scrolling */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border-radius: 18px;
     padding: 24px;
     text-align: center;
     box-shadow: var(--shadow-main);
-    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, box-shadow 0.3s ease;
+    transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease, box-shadow 0.55s cubic-bezier(0.16, 1, 0.3, 1);
     opacity: 0;
     transform: translateY(36px);
     will-change: opacity, transform;
@@ -856,6 +854,7 @@ body[dir="ltr"] {
     opacity: 1;
     transform: translateY(0);
     will-change: auto;
+    transition-delay: 0s !important; /* Optimization: Reset transition-delay so hover responds instantly */
 }
 
 .stat-card:nth-child(1) { transition-delay: 0.05s; }
@@ -951,6 +950,7 @@ body[dir="rtl"] .section-title::after {
     opacity: 1;
     transform: translateY(0);
     will-change: auto;
+    transition-delay: 0s !important; /* Optimization: Reset transition-delay so hover responds instantly */
 }
 
 .service-card:nth-child(1) { transition-delay: 0.00s; }
@@ -1371,6 +1371,7 @@ body[dir="rtl"] .timeline-node-right {
     opacity: 1;
     transform: translateY(0);
     will-change: auto;
+    transition-delay: 0s !important; /* Optimization: Reset transition-delay so hover responds instantly */
 }
 
 .project-card:nth-child(1) { transition-delay: 0.00s; }
@@ -1438,8 +1439,9 @@ body[dir="rtl"] .project-card-overlay {
     font-weight: 700;
     padding: 4px 10px;
     border-radius: 10px;
-    background: rgba(12, 17, 34, 0.92); /* Slightly higher opacity for clean contrast without blur cost */
-    /* Optimization: Removed backdrop-filter to save rendering cycles for multiple tag elements */
+    background: rgba(12, 17, 34, 0.85);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     color: var(--accent-cyan);
     border: 1px solid var(--glass-border);
 }
@@ -2842,7 +2844,7 @@ body[dir="rtl"] .toast-notification {
     transform-style: preserve-3d;
     perspective: 1000px;
     backface-visibility: hidden;
-    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.3s ease, box-shadow 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease, box-shadow 0.55s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .project-card:hover {
@@ -2861,7 +2863,7 @@ body[dir="rtl"] .toast-notification {
     transform-style: preserve-3d;
     perspective: 1000px;
     backface-visibility: hidden;
-    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.3s ease, box-shadow 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease;
+    transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease, box-shadow 0.55s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.55s ease;
 }
 
 .service-card.revealed:hover {
@@ -2879,7 +2881,7 @@ body[dir="rtl"] .toast-notification {
     transform-style: preserve-3d;
     perspective: 1000px;
     backface-visibility: hidden;
-    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.3s ease, box-shadow 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease, box-shadow 0.55s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .skills-category-card:hover {

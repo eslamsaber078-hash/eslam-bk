@@ -442,33 +442,51 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 5. Scroll triggers and sticky navigation effects
     let isScrollScheduled = false;
+    let isHeaderScrolled = false;
+    let isScrollTopVisible = false;
+    let isScrollDownHidden = false;
+
     function handleScroll() {
+        const sy = window.scrollY; // Cache scrollY to prevent multiple layout recalculations
+
         // Apply solid layout when scrolled
         if (header) {
-            if (window.scrollY > 50) {
-                header.classList.add('scrolled');
-            } else {
-                header.classList.remove('scrolled');
+            const shouldScroll = sy > 50;
+            if (shouldScroll !== isHeaderScrolled) {
+                isHeaderScrolled = shouldScroll;
+                if (shouldScroll) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
             }
         }
 
         // Float standard scroll-to-top button
         if (scrollToTopBtn) {
-            if (window.scrollY > 500) {
-                scrollToTopBtn.style.opacity = '1';
-                scrollToTopBtn.style.pointerEvents = 'auto';
-            } else {
-                scrollToTopBtn.style.opacity = '0';
-                scrollToTopBtn.style.pointerEvents = 'none';
+            const shouldShow = sy > 500;
+            if (shouldShow !== isScrollTopVisible) {
+                isScrollTopVisible = shouldShow;
+                if (shouldShow) {
+                    scrollToTopBtn.style.opacity = '1';
+                    scrollToTopBtn.style.pointerEvents = 'auto';
+                } else {
+                    scrollToTopBtn.style.opacity = '0';
+                    scrollToTopBtn.style.pointerEvents = 'none';
+                }
             }
         }
 
         // Hide scroll down indicator when scrolling
         if (scrollDownIndicator) {
-            if (window.scrollY > 80) {
-                scrollDownIndicator.classList.add('hidden');
-            } else {
-                scrollDownIndicator.classList.remove('hidden');
+            const shouldHide = sy > 80;
+            if (shouldHide !== isScrollDownHidden) {
+                isScrollDownHidden = shouldHide;
+                if (shouldHide) {
+                    scrollDownIndicator.classList.add('hidden');
+                } else {
+                    scrollDownIndicator.classList.remove('hidden');
+                }
             }
         }
         
@@ -1314,6 +1332,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     const moveImgY = normY * imgDist;
                     const moveGlowX = normX * glowDist;
                     const moveGlowY = normY * glowDist;
+
+                    // Disable transitions so JS coordinates update instantly without transition fighting
+                    profileWrapper.style.transition = 'none';
+                    profileImg.style.transition = 'none';
+                    glowCircle.style.transition = 'none';
 
                     // Pause the floaty animation so it doesn't conflict with active mouse movement
                     profileWrapper.style.animation = 'none';
