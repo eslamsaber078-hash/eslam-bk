@@ -257,6 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
             "footer-location": "جمهورية مصر العربية",
             "footer-copy-text": "جميع الحقوق محفوظة",
             "intro-tagline": "مطور تطبيقات & مواقع ويب",
+            "date-present": "الآن",
             "intro-loading-text": "جاري التحميل...",
             "fact-age-val": "25 عاماً",
             "fact-edu-val": "البرمجيات والأنظمة المصرفية",
@@ -367,6 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
             "footer-location": "Arab Republic of Egypt",
             "footer-copy-text": "All Rights Reserved",
             "intro-tagline": "Desktop & Web Developer",
+            "date-present": "Present",
             "intro-loading-text": "Loading...",
             "fact-age-val": "25 Years Old",
             "fact-edu-val": "Software & Banking Systems",
@@ -400,11 +402,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 4. Hamburger mobile navigation interactions
     if (mobileMenuBtn && navMenu) {
+        // Create menu backdrop dynamically
+        const menuBackdrop = document.createElement('div');
+        menuBackdrop.className = 'menu-backdrop';
+        document.body.appendChild(menuBackdrop);
+
         mobileMenuBtn.addEventListener('click', () => {
             navMenu.classList.toggle('open');
+            const isOpen = navMenu.classList.contains('open');
+            menuBackdrop.classList.toggle('show', isOpen);
             const icon = mobileMenuBtn.querySelector('i');
             if (icon) {
-                if (navMenu.classList.contains('open')) {
+                if (isOpen) {
                     icon.classList.replace('fa-bars', 'fa-xmark');
                 } else {
                     icon.classList.replace('fa-xmark', 'fa-bars');
@@ -412,10 +421,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        // Click backdrop to close menu
+        menuBackdrop.addEventListener('click', () => {
+            navMenu.classList.remove('open');
+            menuBackdrop.classList.remove('show');
+            const icon = mobileMenuBtn.querySelector('i');
+            if (icon) icon.classList.replace('fa-xmark', 'fa-bars');
+        });
+
         // Auto close menu upon link clicking
         document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', () => {
                 navMenu.classList.remove('open');
+                menuBackdrop.classList.remove('show');
                 const icon = mobileMenuBtn.querySelector('i');
                 if (icon) icon.classList.replace('fa-xmark', 'fa-bars');
             });
@@ -600,49 +618,23 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isAnimating) return;
             isAnimating = true;
 
-            // Get button center as the liquid origin point
-            const rect = themeToggleBtn.getBoundingClientRect();
-            const originX = Math.round(rect.left + rect.width / 2);
-            const originY = Math.round(rect.top + rect.height / 2);
-
             const isLight = document.body.classList.contains('light-theme');
             const nextTheme = isLight ? 'dark' : 'light';
 
-            // Liquid overlay background — radial gradient for a glowing core effect
-            const overlayBg = isLight
-                ? 'radial-gradient(circle at 40% 40%, #1a2744 0%, #0a1020 40%, #060913 100%)'
-                : 'radial-gradient(circle at 40% 40%, #ffffff 0%, #eef3fb 40%, #f6f9fc 100%)';
+            // Enable smooth transition on all variables
+            document.body.classList.add('theme-transitioning');
 
-            // Create the liquid overlay element
-            const overlay = document.createElement('div');
-            overlay.style.cssText = `
-                position: fixed;
-                inset: 0;
-                z-index: 999999;
-                pointer-events: none;
-                background: ${overlayBg};
-                clip-path: circle(0px at ${originX}px ${originY}px);
-                will-change: clip-path;
-            `;
-            document.body.appendChild(overlay);
+            // Switch theme classes immediately so colors fade gradually while keeping elements visible
+            document.body.classList.toggle('light-theme');
+            document.body.classList.toggle('dark-theme');
+            localStorage.setItem('theme', nextTheme);
+            updateMetaThemeColor(nextTheme === 'light');
 
-            // Double rAF ensures the initial state is painted before animating
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    overlay.style.transition = 'clip-path 1s cubic-bezier(0.76, 0, 0.24, 1)';
-                    overlay.style.clipPath = `circle(200vmax at ${originX}px ${originY}px)`;
-                });
-            });
-
-            // Once liquid fully covers screen → switch theme → remove overlay instantly
-            overlay.addEventListener('transitionend', () => {
-                document.body.classList.toggle('light-theme');
-                document.body.classList.toggle('dark-theme');
-                localStorage.setItem('theme', nextTheme);
-                updateMetaThemeColor(nextTheme === 'light');
-                overlay.remove();
+            // Remove transitioning class after animation finishes
+            setTimeout(() => {
+                document.body.classList.remove('theme-transitioning');
                 isAnimating = false;
-            }, { once: true });
+            }, 550);
         });
     }
 
@@ -1177,18 +1169,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const glow1 = document.querySelector('.glow-circle-1');
     const glow2 = document.querySelector('.glow-circle-2');
 
+    // Cache layout measurements to avoid layout thrashing in high-frequency event loops
+    let heroRect = heroSection ? heroSection.getBoundingClientRect() : null;
+    window.addEventListener('resize', () => {
+        if (heroSection) heroRect = heroSection.getBoundingClientRect();
+    }, { passive: true });
+
     if (heroSection && glow1 && glow2) {
         let isMouseScheduled = false;
         let mouseX = 0;
         let mouseY = 0;
         
         function updateGlowPosition() {
-            const rect = heroSection.getBoundingClientRect();
-            const x = mouseX - rect.left;
-            const y = mouseY - rect.top;
+            if (!heroRect) return;
+            const x = mouseX - heroRect.left;
+            const y = mouseY - heroRect.top;
             
-            const xPercent = (x / rect.width) * 100;
-            const yPercent = (y / rect.height) * 100;
+            const xPercent = (x / heroRect.width) * 100;
+            const yPercent = (y / heroRect.height) * 100;
             
             glow1.style.transform = `translate(${xPercent * 0.15}px, ${yPercent * 0.15}px)`;
             glow2.style.transform = `translate(${-xPercent * 0.12}px, ${-yPercent * 0.12}px)`;
@@ -1282,12 +1280,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!isScheduled) {
                 isScheduled = true;
                 requestAnimationFrame(() => {
-                    const rect = hero.getBoundingClientRect();
-                    const relX = mX - rect.left - rect.width / 2;
-                    const relY = mY - rect.top - rect.height / 2;
+                    if (!heroRect) return;
+                    const relX = mX - heroRect.left - heroRect.width / 2;
+                    const relY = mY - heroRect.top - heroRect.height / 2;
 
-                    const normX = relX / (rect.width / 2);
-                    const normY = relY / (rect.height / 2);
+                    const normX = relX / (heroRect.width / 2);
+                    const normY = relY / (heroRect.height / 2);
 
                     // 3D Tilt angles (max 10 degrees) for the frame wrapper
                     const tiltX = -normY * 10;
