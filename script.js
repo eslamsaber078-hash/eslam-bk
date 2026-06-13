@@ -931,15 +931,30 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.innerHTML = `<span>${label}</span><i class="fa-solid fa-chevron-down"></i>`;
         btn.addEventListener('click', () => {
             // Reveal all remaining "all" cards
+            const newlyRevealed = [];
             projectCards.forEach(card => {
-                if (card.getAttribute('data-category') || true) {
+                if (card.classList.contains('load-more-hidden')) {
                     card.classList.remove('filter-hidden');
                     card.classList.remove('load-more-hidden');
+                    card.classList.add('revealed'); // Mark as revealed so it gets opacity 1 in CSS
+                    
+                    // Initialize clean fade-in state
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(20px) scale(0.98)';
+                    newlyRevealed.push(card);
                 }
             });
             removeLoadMoreBtn();
             // Update badge count to total
             updateFilterCount(projectCards.length, currentLanguage);
+
+            // Trigger premium staggered fade-in transition
+            newlyRevealed.forEach((card, i) => {
+                setTimeout(() => {
+                    card.style.opacity = '';
+                    card.style.transform = '';
+                }, i * 65);
+            });
         });
         if (projectsGrid) projectsGrid.after(btn);
     }
