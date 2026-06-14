@@ -948,30 +948,30 @@ document.addEventListener('DOMContentLoaded', () => {
             : `عرض المزيد (${remaining} متبقي)`;
         btn.innerHTML = `<span>${label}</span><i class="fa-solid fa-chevron-down"></i>`;
         btn.addEventListener('click', () => {
-            // Reveal all remaining "all" cards
-            const newlyRevealed = [];
+            // Collect hidden cards BEFORE removing their class
+            const toReveal = [];
             projectCards.forEach(card => {
                 if (card.classList.contains('load-more-hidden')) {
-                    card.classList.remove('filter-hidden');
-                    card.classList.remove('load-more-hidden');
-                    card.classList.add('revealed'); // Mark as revealed so it gets opacity 1 in CSS
-                    
-                    // Initialize clean fade-in state
-                    card.style.opacity = '0';
-                    card.style.transform = 'translateY(20px) scale(0.98)';
-                    newlyRevealed.push(card);
+                    toReveal.push(card);
                 }
             });
+
             removeLoadMoreBtn();
-            // Update badge count to total
             updateFilterCount(projectCards.length, currentLanguage);
 
-            // Trigger premium staggered fade-in transition
-            newlyRevealed.forEach((card, i) => {
+            // Stagger each card individually with a standard reflow trigger:
+            // Removing load-more-hidden/filter-hidden restores display:flex.
+            // void card.offsetWidth forces the browser to commit the opacity:0 state before adding .revealed.
+            toReveal.forEach((card, i) => {
                 setTimeout(() => {
-                    card.style.opacity = '';
-                    card.style.transform = '';
-                }, i * 65);
+                    card.classList.remove('load-more-hidden');
+                    card.classList.remove('filter-hidden');
+
+                    // Force synchronous layout reflow
+                    void card.offsetWidth;
+
+                    card.classList.add('revealed');
+                }, i * 90);
             });
         });
         if (projectsGrid) projectsGrid.after(btn);
@@ -981,59 +981,52 @@ document.addEventListener('DOMContentLoaded', () => {
         currentFilter = filterValue;
         removeLoadMoreBtn();
 
-        // Fade-out cards that are currently visible before applying new filter
-        const currentlyVisible = Array.from(projectCards).filter(
-            c => !c.classList.contains('filter-hidden') && !c.classList.contains('load-more-hidden')
-        );
-        currentlyVisible.forEach(c => {
-            c.classList.add('filter-exit');   // short 180ms transition
-            c.style.opacity = '0';
-            c.style.transform = 'translateY(12px) scale(0.97)';
-        });
+        // Apply filter classes — CSS handles display:none for hidden ones
+        let visibleCount  = 0;
+        let hiddenByLimit = 0;
+        const toShow = [];
 
-        // Apply filter classes after short fade-out, then fade new cards in
-        setTimeout(() => {
-            let visibleCount  = 0;
-            let hiddenByLimit = 0;
-
-            if (filterValue === 'all') {
-                projectCards.forEach((card, index) => {
-                    card.classList.remove('filter-hidden');
-                    if (index < LOAD_MORE_LIMIT) {
-                        card.classList.remove('load-more-hidden');
-                        visibleCount++;
-                    } else {
-                        card.classList.add('load-more-hidden');
-                        hiddenByLimit++;
-                    }
-                });
-                if (hiddenByLimit > 0) createLoadMoreBtn(hiddenByLimit);
-            } else {
-                projectCards.forEach(card => {
+        if (filterValue === 'all') {
+            projectCards.forEach((card, index) => {
+                card.classList.remove('revealed');
+                card.classList.remove('filter-hidden');
+                if (index < LOAD_MORE_LIMIT) {
                     card.classList.remove('load-more-hidden');
-                    const shouldShow = card.getAttribute('data-category') === filterValue;
-                    if (shouldShow) {
-                        card.classList.remove('filter-hidden');
-                        visibleCount++;
-                    } else {
-                        card.classList.add('filter-hidden');
-                    }
-                });
-            }
-
-            updateFilterCount(visibleCount, currentLanguage);
-
-            // Fade in the newly visible cards with staggered delay
-            const nowVisible = Array.from(projectCards).filter(
-                c => !c.classList.contains('filter-hidden') && !c.classList.contains('load-more-hidden')
-            );
-            nowVisible.forEach((card, i) => {
-                setTimeout(() => {
-                    card.style.opacity = '';
-                    card.style.transform = '';
-                }, i * 55);
+                    toShow.push(card);
+                    visibleCount++;
+                } else {
+                    card.classList.add('load-more-hidden');
+                    hiddenByLimit++;
+                }
             });
-        }, 220);
+            if (hiddenByLimit > 0) createLoadMoreBtn(hiddenByLimit);
+        } else {
+            projectCards.forEach(card => {
+                card.classList.remove('revealed');
+                card.classList.remove('load-more-hidden');
+                const shouldShow = card.getAttribute('data-category') === filterValue;
+                if (shouldShow) {
+                    card.classList.remove('filter-hidden');
+                    toShow.push(card);
+                    visibleCount++;
+                } else {
+                    card.classList.add('filter-hidden');
+                }
+            });
+        }
+
+        updateFilterCount(visibleCount, currentLanguage);
+
+        // Stagger visible cards in with a standard reflow trigger:
+        // After removing 'revealed', card is at opacity:0 (base CSS).
+        // void card.offsetWidth forces the browser to commit the opacity:0 paint
+        // before adding 'revealed' to trigger the smooth CSS transition.
+        toShow.forEach((card, i) => {
+            setTimeout(() => {
+                void card.offsetWidth;
+                card.classList.add('revealed');
+            }, i * 55);
+        });
     }
 
     filterTabs.forEach(tab => {
@@ -1252,24 +1245,29 @@ document.addEventListener('DOMContentLoaded', () => {
         particlesContainer.style.cssText = 'position: absolute; top:0; left:0; width:100%; height:100%; overflow:hidden; pointer-events:none; z-index:0;';
         heroSection.insertBefore(particlesContainer, heroSection.firstChild);
         
+        // Reduced to 7 particles (was 12) — fewer GPU compositing layers = less stuttering
         const colors = ['#00f2fe', '#4facfe', '#3b82f6'];
-        for (let i = 0; i < 12; i++) {
+        for (let i = 0; i < 7; i++) {
             const particle = document.createElement('div');
-            const size = Math.random() * 6 + 3; // 3px to 9px
-            const color = colors[Math.floor(Math.random() * colors.length)];
+            const size = Math.random() * 5 + 3; // 3px to 8px
+            const color = colors[i % colors.length]; // deterministic, no Math.random for color
+            const duration = (Math.random() * 6 + 7).toFixed(1); // 7–13s
+            const delay    = (Math.random() * 5).toFixed(1);
+            const left     = (Math.random() * 95).toFixed(1);
+            const opacity  = (Math.random() * 0.25 + 0.12).toFixed(2);
             
             particle.style.cssText = `
                 position: absolute;
                 bottom: -20px;
-                left: ${Math.random() * 100}%;
-                width: ${size}px;
-                height: ${size}px;
+                left: ${left}%;
+                width: ${size.toFixed(0)}px;
+                height: ${size.toFixed(0)}px;
                 background: ${color};
                 border-radius: 50%;
-                opacity: ${Math.random() * 0.3 + 0.15};
-                box-shadow: 0 0 8px ${color};
-                animation: floatUp ${Math.random() * 8 + 6}s linear infinite;
-                animation-delay: ${Math.random() * 4}s;
+                opacity: ${opacity};
+                will-change: transform;
+                animation: floatUp ${duration}s linear infinite ${delay}s;
+                contain: strict;
             `;
             particlesContainer.appendChild(particle);
         }
@@ -1333,10 +1331,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     const moveGlowX = normX * glowDist;
                     const moveGlowY = normY * glowDist;
 
-                    // Disable transitions so JS coordinates update instantly without transition fighting
-                    profileWrapper.style.transition = 'none';
-                    profileImg.style.transition = 'none';
-                    glowCircle.style.transition = 'none';
+                    // Apply a smooth, damped transition so the elements follow the mouse with a natural, organic flow
+                    profileWrapper.style.transition = 'transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1)';
+                    profileImg.style.transition = 'transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1)';
+                    glowCircle.style.transition = 'transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1)';
 
                     // Pause the floaty animation so it doesn't conflict with active mouse movement
                     profileWrapper.style.animation = 'none';

@@ -187,7 +187,8 @@ body {
 }
 
 /* Explicit transitions for layout elements instead of wildcard (*) transition to improve rendering performance */
-body, header, .nav-menu, .nav-item, .action-btn, .mobile-toggle, .btn, .social-link, .profile-image-outer, .profile-image-wrapper, .avatar-container, .stat-card, .service-card, .service-icon-box, .service-badges span, .skills-category-card, .skill-progress-bar-fill, .about-intro-box, .about-photo-wrapper, .about-bio-details, .timeline-content-box, .timeline-node::after, .project-card, .project-card::after, .project-card-image img, .btn-card-video, .btn-card-download, .contact-card-box, .contact-box-icon, .contact-link, .contact-form-container, .input-wrapper input, .input-wrapper textarea, .footer-container, .footer-social-link, .footer-nav-link, .scroll-top-btn, .video-modal, .video-modal-wrapper, .video-modal-close-btn, .toast-notification {
+/* NOTE: .stat-card and .service-card are intentionally excluded — they manage their own transitions per-state */
+body, header, .nav-menu, .nav-item, .action-btn, .mobile-toggle, .btn, .social-link, .profile-image-outer, .profile-image-wrapper, .avatar-container, .service-icon-box, .service-badges span, .skills-category-card, .skill-progress-bar-fill, .about-intro-box, .about-photo-wrapper, .about-bio-details, .timeline-content-box, .timeline-node::after, .project-card, .project-card::after, .project-card-image img, .btn-card-video, .btn-card-download, .contact-card-box, .contact-box-icon, .contact-link, .contact-form-container, .input-wrapper input, .input-wrapper textarea, .footer-container, .footer-social-link, .footer-nav-link, .scroll-top-btn, .video-modal, .video-modal-wrapper, .video-modal-close-btn, .toast-notification {
     transition: background-color 0.3s ease, border-color 0.3s ease, color 0.15s ease, transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
 }
 
@@ -267,22 +268,21 @@ body {
 
 /* ============================================================
    SMOOTH THEME TRANSITION
-   Applied temporarily to all elements during theme switch
+   Applied temporarily to all elements during theme switch.
+   EXCLUDED: elements with keyframe animations to avoid conflicts.
    ============================================================ */
 .theme-transitioning,
-.theme-transitioning *,
-.theme-transitioning *::before,
-.theme-transitioning *::after {
+.theme-transitioning *:not(.intro-ring):not(.intro-particle):not(.glowing-border-circle):not(.profile-image-wrapper):not(.intro-progress-bar):not(.intro-logo-accent):not(.typing-cursor):not(.particles-container *),
+.theme-transitioning *:not(.intro-ring):not(.intro-particle):not(.glowing-border-circle):not(.profile-image-wrapper):not(.intro-progress-bar):not(.intro-logo-accent):not(.typing-cursor):not(.particles-container *)::before,
+.theme-transitioning *:not(.intro-ring):not(.intro-particle):not(.glowing-border-circle):not(.profile-image-wrapper):not(.intro-progress-bar):not(.intro-logo-accent):not(.typing-cursor):not(.particles-container *)::after {
     transition:
-        background-color 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-        background 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-        color 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-        border-color 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-        box-shadow 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-        fill 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-        stroke 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-        text-shadow 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-        opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1) !important;
+        background-color 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+        background 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+        color 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+        fill 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+        stroke 0.32s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 html, body {
@@ -844,17 +844,24 @@ body[dir="ltr"] {
     padding: 24px;
     text-align: center;
     box-shadow: var(--shadow-main);
-    transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease, box-shadow 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+    /* Reveal animation transition — slow entrance is fine */
+    transition:
+        opacity  0.55s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
     opacity: 0;
     transform: translateY(36px);
-    will-change: opacity, transform;
+    /* contain: isolates repaint to card only — prevents layout recalculation propagating to rest of page */
+    contain: layout style;
 }
 
 .stat-card.revealed {
     opacity: 1;
     transform: translateY(0);
-    will-change: auto;
-    transition-delay: 0s !important; /* Optimization: Reset transition-delay so hover responds instantly */
+    /* After reveal: switch to fast hover-optimized transition — no delay */
+    transition:
+        transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+        border-color 0.18s ease,
+        box-shadow 0.18s ease !important;
 }
 
 .stat-card:nth-child(1) { transition-delay: 0.05s; }
@@ -863,9 +870,9 @@ body[dir="ltr"] {
 .stat-card:nth-child(4) { transition-delay: 0.29s; }
 
 .stat-card.revealed:hover {
-    transform: translateY(-5px);
+    transform: translateY(-6px) scale(1.02);
     border-color: var(--accent-cyan);
-    box-shadow: var(--shadow-glow);
+    box-shadow: var(--shadow-glow-hover);
 }
 
 .stat-num {
@@ -1371,7 +1378,17 @@ body[dir="rtl"] .timeline-node-right {
     opacity: 1;
     transform: translateY(0);
     will-change: auto;
-    transition-delay: 0s !important; /* Optimization: Reset transition-delay so hover responds instantly */
+    transition-delay: 0s !important;
+}
+
+/* ─── Filter & Load-More visibility management ─── */
+/* Use display:none so hidden cards take NO grid space (no blank gaps) */
+.project-card.filter-hidden {
+    display: none !important;
+}
+
+.project-card.load-more-hidden {
+    display: none !important;
 }
 
 .project-card:nth-child(1) { transition-delay: 0.00s; }
