@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" dir="ltr">
 
 <head>
@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     
     <!-- Custom stylesheet with cache buster -->
-    <link rel="stylesheet" href="style.css?v=2.10" />
+    <link rel="stylesheet" href="style.css?v=2.7" />
 </head>
 
 <body class="dark-theme">
@@ -364,81 +364,28 @@
         </section>
 
         <!-- Experience / Chronological Timeline Section (NEW Section) -->
-                <section class="experience-section section-padding" id="about">
-            <!-- Subtle background accent blobs -->
-            <div class="about-bg-accents" aria-hidden="true">
-                <div class="about-bg-blob about-bg-blob-1"></div>
-                <div class="about-bg-blob about-bg-blob-2"></div>
-            </div>
+        <section class="experience-section section-padding" id="about">
             <div class="container">
                 <div class="section-header text-center">
                     <h2 class="section-title" data-key="about-title">من أنا ومسيرتي المهنية</h2>
                     <p class="section-subtitle" data-key="about-subtitle">رحلتي العملية المتميزة التي تدمج بين العمل المصرفي وعالم البرمجيات وتطوير التكنولوجيا</p>
                 </div>
-
+                
                 <div class="about-intro-box reveal-item">
-                    <!-- Photo column with mini stats -->
                     <div class="about-photo-wrapper">
-                        <div class="about-photo-frame">
-                            <img src="https://eslamsaber078-hash.github.io/EslamBK/logo2.png" alt="Eslam Saber" class="about-photo" loading="lazy" decoding="async" />
-                        </div>
-                        <div class="about-mini-stats">
-                            <div class="about-mini-stat">
-                                <span class="about-mini-stat-num">8+</span>
-                                <span class="about-mini-stat-label" data-key="about-mini-proj">مشروع</span>
-                            </div>
-                            <div class="about-mini-stat-divider"></div>
-                            <div class="about-mini-stat">
-                                <span class="about-mini-stat-num">5+</span>
-                                <span class="about-mini-stat-label" data-key="about-mini-exp">سنوات</span>
-                            </div>
-                            <div class="about-mini-stat-divider"></div>
-                            <div class="about-mini-stat">
-                                <span class="about-mini-stat-num">2+</span>
-                                <span class="about-mini-stat-label" data-key="about-mini-track">مجالات</span>
-                            </div>
-                        </div>
+                        <img src="https://eslamsaber078-hash.github.io/EslamBK/logo2.png" alt="Eslam Saber" class="about-photo" loading="lazy" decoding="async" />
                     </div>
-
-                    <!-- Elegant vertical divider -->
-                    <div class="about-divider" aria-hidden="true"></div>
-
-                    <!-- Bio column -->
                     <div class="about-bio-details">
                         <h3 data-key="about-bio-who">من هو إسلام صابر؟</h3>
                         <p class="bio-text" data-key="about-bio-text">
                             أنا شاب طموح ومثابر أبلغ من العمر 25 عاماً، أمتلك شغفاً لا حدود له للتكنولوجيا والتعلم الذاتي. أعمل حالياً كـ ممثل خدمة عملاء في <strong>البنك الأهلي المصري</strong> منذ أكثر من 5 سنوات، وهو ما أكسبني مهارات استثنائية في التواصل وحل المشكلات وإدارة الأزمات. إلى جانب ذلك، استثمرت طاقتي في احتراف البرمجة، وقمت ببناء العديد من المشاريع المميزة في تطبيقات سطح المكتب وألعاب الكمبيوتر التفاعلية ولدي معرفة راسخة بتطوير الويب الحديث.
                         </p>
-
+                        
                         <div class="quick-facts-grid">
-                            <div class="fact-item">
-                                <span class="fact-icon-wrap"><i class="fa-solid fa-user"></i></span>
-                                <div class="fact-text">
-                                    <strong data-key="fact-age">العمر:</strong>
-                                    <span data-key="fact-age-val">25 عاماً</span>
-                                </div>
-                            </div>
-                            <div class="fact-item">
-                                <span class="fact-icon-wrap"><i class="fa-solid fa-fire-flame-curved"></i></span>
-                                <div class="fact-text">
-                                    <strong data-key="fact-edu">الشغف:</strong>
-                                    <span data-key="fact-edu-val">البرمجيات والأنظمة المصرفية</span>
-                                </div>
-                            </div>
-                            <div class="fact-item">
-                                <span class="fact-icon-wrap"><i class="fa-solid fa-location-dot"></i></span>
-                                <div class="fact-text">
-                                    <strong data-key="fact-loc">الموقع:</strong>
-                                    <span data-key="fact-loc-val">جمهورية مصر العربية</span>
-                                </div>
-                            </div>
-                            <div class="fact-item">
-                                <span class="fact-icon-wrap"><i class="fa-solid fa-briefcase"></i></span>
-                                <div class="fact-text">
-                                    <strong data-key="fact-job">العمل الحالي:</strong>
-                                    <span data-key="fact-job-val">خدمة عملاء بالبنك الأهلي المصري</span>
-                                </div>
-                            </div>
+                            <div class="fact-item"><i class="fa-solid fa-circle-check"></i> <strong data-key="fact-age">العمر:</strong> <span data-key="fact-age-val">25 عاماً</span></div>
+                            <div class="fact-item"><i class="fa-solid fa-circle-check"></i> <strong data-key="fact-edu">الشغف:</strong> <span data-key="fact-edu-val">البرمجيات والأنظمة المصرفية</span></div>
+                            <div class="fact-item"><i class="fa-solid fa-circle-check"></i> <strong data-key="fact-loc">الموقع:</strong> <span data-key="fact-loc-val">جمهورية مصر العربية</span></div>
+                            <div class="fact-item"><i class="fa-solid fa-circle-check"></i> <strong data-key="fact-job">العمل الحالي:</strong> <span data-key="fact-job-val">خدمة عملاء بالبنك الأهلي المصري</span></div>
                         </div>
                     </div>
                 </div>
@@ -446,7 +393,7 @@
                 <!-- Interactive Timeline -->
                 <div class="timeline-wrapper">
                     <h3 class="timeline-title text-center reveal-item" data-key="timeline-header">الجدول الزمني للخبرات</h3>
-
+                    
                     <div class="timeline">
                         <!-- Node 1 -->
                         <div class="timeline-node timeline-node-left reveal-item">
@@ -456,12 +403,12 @@
                                 <p class="timeline-box-desc" data-key="tl-nbe-desc">تقديم الدعم والمساعدة المصرفية لعملاء البنك، والتعامل المباشر مع الأنظمة المعقدة وإدارة الحسابات البنكية وحل المشاكل التقنية والمالية بدقة وسرعة فائقة.</p>
                             </div>
                         </div>
-
+                        
                         <!-- Node 2 -->
                         <div class="timeline-node timeline-node-right reveal-item">
                             <div class="timeline-content-box">
                                 <span class="timeline-date">2023 - <span data-key="date-present">الآن</span></span>
-                                <h4 class="timeline-box-title" data-key="tl-csharp-title">احتراف تطوير C# &amp; Desktop Applications</h4>
+                                <h4 class="timeline-box-title" data-key="tl-csharp-title">احتراف تطوير C# & Desktop Applications</h4>
                                 <p class="timeline-box-desc" data-key="tl-csharp-desc">تصميم وتنفيذ 8 تطبيقات سطح مكتب متكاملة تشمل برمجيات حماية كلمات المرور، ومحاكاة ماكينات الـ ATM، وتطوير ألعاب أركيد تفاعلية كلاسيكية مثل Pac-Man و Dinos وغيرها.</p>
                             </div>
                         </div>
@@ -478,6 +425,7 @@
                 </div>
             </div>
         </section>
+
         <!-- Projects Grid Section -->
         <section class="projects-section section-padding" id="projects">
             <div class="container">
@@ -1076,7 +1024,8 @@
     </div>
 
     <!-- Script loading with cache buster -->
-    <script src="script.js?v=2.10"></script>
+    <script src="script.js?v=2.7"></script>
 </body>
 
 </html>
+

@@ -225,6 +225,11 @@ body, header, .nav-menu, .nav-item, .action-btn, .mobile-toggle, .btn, .social-l
     
     --glow-color-1: rgba(0, 242, 254, 0.12);
     --glow-color-2: rgba(79, 172, 254, 0.12);
+    
+    --profile-shadow: 
+        0 15px 35px rgba(0, 0, 0, 0.35),
+        0 5px 15px rgba(0, 0, 0, 0.2),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 /* Light Theme Variables */
@@ -252,6 +257,11 @@ body, header, .nav-menu, .nav-item, .action-btn, .mobile-toggle, .btn, .social-l
     
     --glow-color-1: rgba(2, 132, 199, 0.06);
     --glow-color-2: rgba(37, 99, 235, 0.06);
+    
+    --profile-shadow: 
+        0 15px 35px rgba(17, 24, 39, 0.06),
+        0 5px 15px rgba(17, 24, 39, 0.04),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.03);
 }
 
 /* Main Body Setup */
@@ -757,21 +767,49 @@ body[dir="ltr"] {
     align-items: center;
     justify-content: center;
     z-index: 5;
-    animation: floaty 6s ease-in-out infinite; /* Centered floaty animation */
+    animation: floaty 7s ease-in-out infinite; /* Premium slow float (7 seconds) */
     transform-style: preserve-3d;
     perspective: 1000px;
-    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    border-radius: 50%;
+    box-shadow: var(--profile-shadow); /* Soft layered shadow for depth */
+    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Glowing border circle (rotates and pulses) */
+/* Premium ambient glow behind the profile image (using accent-cyan) */
+.profile-image-wrapper::before {
+    content: '';
+    position: absolute;
+    inset: -12px;
+    border-radius: 50%;
+    background: var(--accent-cyan);
+    filter: blur(35px);
+    opacity: 0.14;
+    z-index: -1;
+    transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), filter 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+}
+
+/* Hover behaviors for ambient glow */
+.profile-image-wrapper:hover::before {
+    opacity: 0.28;
+    filter: blur(45px);
+}
+
+/* Glowing border circle (rotates and pulses very slowly) */
 .glowing-border-circle {
     position: absolute;
     width: 100%;
     height: 100%;
     border-radius: 50%;
     background: var(--accent-gradient);
-    opacity: 0.75;
-    animation: rotate 10s linear infinite, glowPulse 3s ease-in-out infinite alternate;
+    opacity: 0.72;
+    animation: rotate 14s linear infinite, glowPulse 4.5s ease-in-out infinite alternate; /* Ultra-slow 14s rotation & 4.5s pulse */
+    transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Hover behaviors for gradient border glow */
+.profile-image-wrapper:hover .glowing-border-circle {
+    opacity: 0.88;
 }
 
 @keyframes rotate {
@@ -781,10 +819,10 @@ body[dir="ltr"] {
 
 @keyframes glowPulse {
     from {
-        box-shadow: 0 0 25px rgba(0, 242, 254, 0.2), inset 0 0 15px rgba(0, 242, 254, 0.1);
+        box-shadow: 0 0 20px rgba(0, 242, 254, 0.15), inset 0 0 12px rgba(0, 242, 254, 0.08);
     }
     to {
-        box-shadow: 0 0 45px rgba(0, 242, 254, 0.55), inset 0 0 25px rgba(0, 242, 254, 0.3);
+        box-shadow: 0 0 35px rgba(0, 242, 254, 0.42), inset 0 0 20px rgba(0, 242, 254, 0.22);
     }
 }
 
@@ -801,7 +839,7 @@ body[dir="ltr"] {
     justify-content: center;
     border: 4px solid var(--bg-primary);
     box-shadow: var(--shadow-main);
-    /* Float animation removed from here so it moves with the glowing-border-circle */
+    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .profile-img {
@@ -811,12 +849,27 @@ body[dir="ltr"] {
     object-position: center bottom; /* Align portrait to the bottom of the circle to show full face */
     pointer-events: none;
     user-select: none;
-    transition: transform 0.3s ease-out; /* Smooth transition for mouse parallax */
+    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1); /* Smooth transition for mouse parallax and hover scale */
+}
+
+/* Slight scale on hover (maximum 1.02) */
+.profile-image-wrapper:hover .profile-img {
+    transform: scale(1.02);
 }
 
 @keyframes floaty {
     0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-12px); }
+    50% { transform: translateY(-5px); } /* Move up/down by only 5px */
+}
+
+/* Respect prefers-reduced-motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .profile-image-wrapper {
+        animation: none !important;
+    }
+    .glowing-border-circle {
+        animation: none !important;
+    }
 }
 
 .stats-section {
@@ -1120,46 +1173,267 @@ body[dir="rtl"] .section-title::after {
     transition: width 1.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* About Me Box Details */
-.about-intro-box {
-    display: flex;
-    align-items: center;
-    gap: 40px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 20px;
-    padding: 40px;
-    box-shadow: var(--shadow-main);
-    margin-bottom: 50px;
+/* ==========================================================================
+   ABOUT SECTION — Premium Glassmorphism Redesign
+   ========================================================================== */
+
+/* ---- Background accent blobs (subtle radial identity) ---- */
+.experience-section {
+    position: relative;
     overflow: hidden;
 }
 
-/* About photo slides in from the side */
-.about-photo-wrapper {
-    flex: 0.8;
-    max-width: 280px;
-    display: flex;
-    justify-content: center;
-    opacity: 0;
-    transform: translateX(60px);
-    transition: opacity 0.5s ease 0.1s, transform 0.5s ease 0.1s;
+.about-bg-accents {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
 }
 
-body[dir="ltr"] .about-photo-wrapper {
-    transform: translateX(-60px);
+.about-bg-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(90px);
+    pointer-events: none;
+    will-change: transform;
+}
+
+.about-bg-blob-1 {
+    width: 450px;
+    height: 450px;
+    top: -80px;
+    right: -100px;
+    background: radial-gradient(circle, rgba(0, 242, 254, 0.07) 0%, transparent 70%);
+}
+
+.about-bg-blob-2 {
+    width: 380px;
+    height: 380px;
+    bottom: -60px;
+    left: -80px;
+    background: radial-gradient(circle, rgba(79, 172, 254, 0.06) 0%, transparent 70%);
+}
+
+.light-theme .about-bg-blob-1 {
+    background: radial-gradient(circle, rgba(2, 132, 199, 0.06) 0%, transparent 70%);
+}
+
+.light-theme .about-bg-blob-2 {
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.05) 0%, transparent 70%);
+}
+
+/* Ensure container sits above blobs */
+.experience-section .container {
+    position: relative;
+    z-index: 1;
+}
+
+/* ---- Main About card — upgraded glass card ---- */
+.about-intro-box {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    padding: 0;
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.22),
+        0 4px 16px rgba(0, 0, 0, 0.12),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    margin-bottom: 50px;
+    overflow: hidden;
+    /* Reveal animation — whole card starts invisible */
+    opacity: 0;
+    transform: translateY(32px);
+    transition:
+        opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.about-intro-box.revealed {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.light-theme .about-intro-box {
+    box-shadow:
+        0 12px 40px rgba(17, 24, 39, 0.08),
+        0 2px 8px rgba(17, 24, 39, 0.04),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.03);
+}
+
+/* ---- Photo column ---- */
+.about-photo-wrapper {
+    flex: 0 0 280px;
+    min-width: 280px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 36px 24px;
+    background: var(--bg-secondary);
+    /* Photo slides in with a clean vertical slide-up */
+    opacity: 0;
+    transform: translateY(15px);
+    transition:
+        opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.1s,
+        transform 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.1s;
 }
 
 .about-intro-box.revealed .about-photo-wrapper {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateY(0);
 }
 
-/* About bio fades in from below */
-.about-bio-details {
-    flex: 2;
+/* Photo frame with glow ring */
+.about-photo-frame {
+    position: relative;
+    display: inline-block;
+    border-radius: 20px;
+}
+
+.about-photo-frame::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 22px;
+    background: var(--accent-gradient);
+    opacity: 0.55;
+    z-index: 0;
+    transition: opacity 0.4s ease;
+}
+
+.about-photo-frame:hover::before {
+    opacity: 0.85;
+}
+
+.about-photo {
+    position: relative;
+    z-index: 1;
+    width: 200px;
+    max-width: 200px;
+    border-radius: 18px;
+    display: block;
+    border: 3px solid var(--bg-secondary);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.about-photo-frame:hover .about-photo {
+    transform: scale(1.02);
+}
+
+/* Mini stats below photo */
+.about-mini-stats {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    justify-content: center;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 12px 10px;
+}
+
+.about-mini-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    flex: 1;
+    /* Stagger in */
     opacity: 0;
-    transform: translateY(25px);
-    transition: opacity 0.5s ease 0.25s, transform 0.5s ease 0.25s;
+    transform: translateY(12px);
+    transition:
+        opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+        background 0.3s ease,
+        border-color 0.3s ease;
+    border-radius: 10px;
+    padding: 4px 6px;
+    cursor: default;
+}
+
+.about-intro-box.revealed .about-mini-stat:nth-child(1) { opacity: 1; transform: translateY(0); transition-delay: 0.4s; }
+.about-intro-box.revealed .about-mini-stat:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 0.5s; }
+.about-intro-box.revealed .about-mini-stat:nth-child(5) { opacity: 1; transform: translateY(0); transition-delay: 0.6s; }
+
+.about-mini-stat:hover {
+    background: rgba(0, 242, 254, 0.06);
+    transform: translateY(-2px) scale(1.02);
+}
+
+.about-mini-stat-num {
+    font-size: 20px;
+    font-weight: 800;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1;
+}
+
+.about-mini-stat-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-muted);
+    white-space: nowrap;
+    text-align: center;
+}
+
+.about-mini-stat-divider {
+    width: 1px;
+    height: 32px;
+    background: var(--border-color);
+    flex-shrink: 0;
+}
+
+/* ---- Premium gradient vertical divider ---- */
+.about-divider {
+    width: 1px;
+    align-self: stretch;
+    background: linear-gradient(
+        to bottom,
+        transparent 0%,
+        var(--accent-cyan) 30%,
+        var(--accent-blue) 70%,
+        transparent 100%
+    );
+    opacity: 0.25;
+    flex-shrink: 0;
+    /* Fades in after card reveals */
+    opacity: 0;
+    transition: opacity 0.7s ease 0.35s;
+}
+
+.about-intro-box.revealed .about-divider {
+    opacity: 0.25;
+}
+
+/* ---- Bio column ---- */
+.about-bio-details {
+    flex: 1;
+    min-width: 0;  /* prevent flex overflow */
+    padding: 36px 36px 36px 36px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+    /* Fades in with slight upward slide, delayed */
+    opacity: 0;
+    transform: translateY(15px);
+    transition:
+        opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.2s,
+        transform 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.2s;
+}
+
+body[dir="rtl"] .about-bio-details {
+    padding: 36px 36px 36px 36px;
 }
 
 .about-intro-box.revealed .about-bio-details {
@@ -1167,66 +1441,153 @@ body[dir="ltr"] .about-photo-wrapper {
     transform: translateY(0);
 }
 
-.about-photo {
-    width: 100%;
-    max-width: 250px;
-    border-radius: 16px;
-    border: 2px solid var(--border-color);
-    box-shadow: var(--shadow-main);
-}
-
-.about-bio-details {
-    flex: 2;
-}
-
 .about-bio-details h3 {
     font-size: 22px;
-    font-weight: 700;
+    font-weight: 800;
     color: var(--accent-cyan);
-    margin-bottom: 12px;
+    margin-bottom: 14px;
+    letter-spacing: -0.3px;
 }
 
 .bio-text {
     color: var(--text-muted);
     font-size: 15px;
-    line-height: 1.8;
-    margin-bottom: 24px;
+    line-height: 1.85;
+    margin-bottom: 28px;
 }
 
+.bio-text strong {
+    color: var(--text-main);
+    font-weight: 700;
+}
+
+/* ---- Fact items with icon pill ---- */
 .quick-facts-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
 }
 
 .fact-item {
-    font-size: 14px;
+    display: flex;
+    align-items: flex-start; /* Align icon to top for multi-line text */
+    gap: 14px;
+    padding: 14px 16px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    font-size: 13.5px;
     color: var(--text-main);
+    min-width: 0;
+    transition:
+        border-color 0.3s ease,
+        transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.3s ease;
+    /* Staggered entrance */
+    opacity: 0;
+    transform: translateY(14px);
+}
+
+.about-intro-box.revealed .fact-item:nth-child(1) { opacity: 1; transform: translateY(0); transition-delay: 0.35s; }
+.about-intro-box.revealed .fact-item:nth-child(2) { opacity: 1; transform: translateY(0); transition-delay: 0.45s; }
+.about-intro-box.revealed .fact-item:nth-child(3) { opacity: 1; transform: translateY(0); transition-delay: 0.55s; }
+.about-intro-box.revealed .fact-item:nth-child(4) { opacity: 1; transform: translateY(0); transition-delay: 0.65s; }
+
+/* Override the base transition list so stagger transition is clean */
+.about-intro-box.revealed .fact-item {
+    transition:
+        border-color 0.28s ease,
+        transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+        box-shadow 0.28s ease,
+        opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+        background 0.28s ease;
+}
+
+.fact-item:hover {
+    border-color: var(--accent-cyan);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 4px 16px rgba(0, 242, 254, 0.1);
+    background: var(--bg-secondary);
+}
+
+/* Icon pill */
+.fact-icon-wrap {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(0, 242, 254, 0.15) 0%, rgba(79, 172, 254, 0.1) 100%);
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 1px solid rgba(0, 242, 254, 0.18);
+    transition: background 0.28s ease, border-color 0.28s ease;
+    margin-top: 2px; /* aligns with first line of text */
 }
 
-.fact-item i {
+.light-theme .fact-icon-wrap {
+    background: linear-gradient(135deg, rgba(2, 132, 199, 0.12) 0%, rgba(37, 99, 235, 0.08) 100%);
+    border-color: rgba(2, 132, 199, 0.18);
+}
+
+.fact-item:hover .fact-icon-wrap {
+    background: linear-gradient(135deg, rgba(0, 242, 254, 0.25) 0%, rgba(79, 172, 254, 0.18) 100%);
+    border-color: rgba(0, 242, 254, 0.35);
+}
+
+.fact-icon-wrap i {
     color: var(--accent-cyan);
-    font-size: 15px;
+    font-size: 13px;
 }
 
-.fact-item strong {
+.fact-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.fact-text strong {
     color: var(--text-muted);
-    font-weight: 500;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    line-height: 1.3;
+    white-space: nowrap;
+}
+
+.fact-text span {
+    color: var(--text-main);
+    font-weight: 600;
+    font-size: 13.5px;
+    line-height: 1.5; /* Spacious line-height preventing any character clipping */
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 /* ==========================================================================
    Experience Timeline Section (Robust Alternate Grid Layout)
    ========================================================================== */
 .timeline-wrapper {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 20px;
-    padding: 50px 30px;
-    box-shadow: var(--shadow-main);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    padding: 50px 36px;
+    box-shadow:
+        0 16px 48px rgba(0, 0, 0, 0.18),
+        0 2px 8px rgba(0, 0, 0, 0.08),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     margin-top: 40px;
+}
+
+.light-theme .timeline-wrapper {
+    box-shadow:
+        0 8px 32px rgba(17, 24, 39, 0.06),
+        0 2px 6px rgba(17, 24, 39, 0.03);
 }
 
 .timeline {
@@ -2241,14 +2602,48 @@ body[dir="rtl"] .toast-notification {
         gap: 30px;
     }
     
+    /* About card stacks vertically on tablet */
     .about-intro-box {
         flex-direction: column;
-        text-align: center;
-        padding: 30px 20px;
+        align-items: stretch;
     }
-    
+
+    .about-photo-wrapper {
+        width: 100%;
+        padding: 36px 24px 20px;
+    }
+
+    .about-divider {
+        /* Switch to horizontal divider on mobile */
+        width: auto;
+        height: 1px;
+        background: linear-gradient(
+            to right,
+            transparent 0%,
+            var(--accent-cyan) 30%,
+            var(--accent-blue) 70%,
+            transparent 100%
+        );
+        margin: 0 28px;
+        transition: opacity 0.7s ease 0.35s;
+    }
+
     .about-bio-details {
         width: 100%;
+        padding: 20px 28px 32px;
+        text-align: center;
+    }
+
+    .quick-facts-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        width: 100%;
+    }
+
+    .fact-item {
+        width: 100%;
+        text-align: start;
+        align-items: flex-start;
     }
 }
 

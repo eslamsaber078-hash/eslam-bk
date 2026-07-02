@@ -169,6 +169,9 @@ document.addEventListener('DOMContentLoaded', () => {
             "stat-exp": "سنوات خبرة في خدمة العملاء",
             "stat-proj": "تطبيقات سطح مكتب جاهزة",
             "stat-track": "مسارات تقنية متقاطعة",
+            "about-mini-proj": "مشروع C#",
+            "about-mini-exp": "سنوات خبرة",
+            "about-mini-track": "مسارات عمل",
             "stat-sat": "الالتزام بالعمل والتعلم المستمر",
             "services-title": "خدماتي المتميزة",
             "services-subtitle": "أقدم حلولاً متكاملة تجمع بين القوة التقنية في بناء التطبيقات وبين التميز الإداري في تلبية احتياجات العملاء",
@@ -280,6 +283,9 @@ document.addEventListener('DOMContentLoaded', () => {
             "stat-exp": "Years of NBE Customer Service",
             "stat-proj": "Native C# Windows Projects",
             "stat-track": "Cross-Disciplinary Domains",
+            "about-mini-proj": "C# Projects",
+            "about-mini-exp": "Years Exp",
+            "about-mini-track": "Domains",
             "stat-sat": "Learning Adaptability & Focus",
             "services-title": "Professional Services",
             "services-subtitle": "Holistic solutions fusing high-fidelity desktop code development with operational customer relationship excellence",
@@ -982,18 +988,18 @@ document.addEventListener('DOMContentLoaded', () => {
         removeLoadMoreBtn();
 
         // Apply filter classes — CSS handles display:none for hidden ones
-        let visibleCount  = 0;
+        let totalMatching = 0;
         let hiddenByLimit = 0;
         const toShow = [];
 
         if (filterValue === 'all') {
+            totalMatching = projectCards.length;
             projectCards.forEach((card, index) => {
                 card.classList.remove('revealed');
                 card.classList.remove('filter-hidden');
                 if (index < LOAD_MORE_LIMIT) {
                     card.classList.remove('load-more-hidden');
                     toShow.push(card);
-                    visibleCount++;
                 } else {
                     card.classList.add('load-more-hidden');
                     hiddenByLimit++;
@@ -1008,14 +1014,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (shouldShow) {
                     card.classList.remove('filter-hidden');
                     toShow.push(card);
-                    visibleCount++;
+                    totalMatching++;
                 } else {
                     card.classList.add('filter-hidden');
                 }
             });
         }
 
-        updateFilterCount(visibleCount, currentLanguage);
+        updateFilterCount(totalMatching, currentLanguage);
 
         // Stagger visible cards in with a standard reflow trigger:
         // After removing 'revealed', card is at opacity:0 (base CSS).
@@ -1279,7 +1285,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (entry.isIntersecting) {
                     particlesContainer.style.display = '';
                     if (profileWrapper) {
-                        profileWrapper.style.animation = 'floaty 6s ease-in-out infinite';
+                        profileWrapper.style.animation = 'floaty 7s ease-in-out infinite';
                     }
                 } else {
                     particlesContainer.style.display = 'none';
@@ -1343,7 +1349,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     profileWrapper.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
 
                     // Pop the avatar forward and slide it towards the mouse in 3D space
-                    profileImg.style.transform = `translate3d(${moveImgX}px, ${moveImgY}px, 25px) scale(1.05)`;
+                    profileImg.style.transform = `translate3d(${moveImgX}px, ${moveImgY}px, 25px) scale(1.02)`;
                     
                     // Slide the rotating glow in the opposite direction
                     glowCircle.style.transform = `translate3d(${moveGlowX}px, ${moveGlowY}px, 0)`;
@@ -1396,7 +1402,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     profileWrapper.style.transition = '';
                     profileImg.style.transition    = '';
                     glowCircle.style.transition    = '';
-                    profileWrapper.style.animation = 'floaty 6s ease-in-out infinite';
+                    profileWrapper.style.animation = 'floaty 7s ease-in-out infinite';
                 }, 820);
             });
         });
