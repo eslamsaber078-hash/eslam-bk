@@ -666,11 +666,19 @@ document.addEventListener('DOMContentLoaded', () => {
     function openVideoPlayer(youtubeId, projectTitle) {
         if (!videoPlayerModal || !videoIframeContainer || !videoModalTitle) return;
         
-        // Define title dynamically
-        videoModalTitle.textContent = currentLanguage === 'ar' ? `استعراض فيديو: ${projectTitle}` : `Video Walkthrough: ${projectTitle}`;
+        // Define title dynamically (textContent is XSS-safe)
+        videoModalTitle.textContent = currentLanguage === 'ar'
+            ? `استعراض فيديو: ${projectTitle}`
+            : `Video Walkthrough: ${projectTitle}`;
         
-        // Embed frame
-        videoIframeContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
+        // S2: Build iframe via createElement — no innerHTML, no XSS risk
+        const iframe = document.createElement('iframe');
+        iframe.setAttribute('src', `https://www.youtube.com/embed/${encodeURIComponent(youtubeId)}?autoplay=1&rel=0`);
+        iframe.setAttribute('title', 'YouTube video player');
+        iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+        iframe.setAttribute('allowfullscreen', '');
+        videoIframeContainer.innerHTML = ''; // clear previous
+        videoIframeContainer.appendChild(iframe);
         
         // Lock document scroll and trigger transition class
         videoPlayerModal.classList.add('open');
@@ -820,11 +828,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.location.protocol !== 'file:') {
         const script = document.createElement('script');
         script.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
+        // S3: SRI hash locks the script to a known-good version
+        script.integrity = 'sha256-x1ENOeKzRSEZ/3LfNAXFVp8qe2zVKX4lXp8EHCW7Ao=';
+        script.crossOrigin = 'anonymous';
         script.async = true;
         script.onload = () => {
             if (typeof emailjs !== 'undefined') {
                 emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
             }
+        };
+        // H2: Surface load failures so the fallback path is visible to the user
+        script.onerror = () => {
+            console.warn('EmailJS SDK failed to load — contact form will fall back to mailto.');
         };
         document.head.appendChild(script);
     }
@@ -846,7 +861,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const emailVal = emailEl.value.trim();
             const msgVal   = msgEl.value.trim();
 
+            // S5: JS-side email format validation (browser type="email" can be bypassed)
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!nameVal || !emailVal || !msgVal) return;
+            if (!emailRegex.test(emailVal)) {
+                showSuccessToast('error');
+                return;
+            }
 
             // Show loading state on button
             const originalBtnHTML = submitBtn.innerHTML;
@@ -1196,53 +1217,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 19. Interactive Hero Mouse Glow Parallax
+    // 19 + 21. Merged: Hero Mouse Glow Parallax + 3D Tilt (single rAF dispatch per frame)
+    // R1: reuse heroSection instead of re-querying document.getElementById('home')
     const heroSection = document.getElementById('home');
     const glow1 = document.querySelector('.glow-circle-1');
     const glow2 = document.querySelector('.glow-circle-2');
 
-    // Cache layout measurements to avoid layout thrashing in high-frequency event loops
+    // Cache layout measurements — H1: debounced resize so it fires at most once per 100ms
     let heroRect = heroSection ? heroSection.getBoundingClientRect() : null;
+    let _resizeTimer = null;
     window.addEventListener('resize', () => {
-        if (heroSection) heroRect = heroSection.getBoundingClientRect();
+        clearTimeout(_resizeTimer);
+        _resizeTimer = setTimeout(() => {
+            if (heroSection) heroRect = heroSection.getBoundingClientRect();
+        }, 100);
     }, { passive: true });
-
-    if (heroSection && glow1 && glow2) {
-        let isMouseScheduled = false;
-        let mouseX = 0;
-        let mouseY = 0;
-        
-        function updateGlowPosition() {
-            if (!heroRect) return;
-            const x = mouseX - heroRect.left;
-            const y = mouseY - heroRect.top;
-            
-            const xPercent = (x / heroRect.width) * 100;
-            const yPercent = (y / heroRect.height) * 100;
-            
-            glow1.style.transform = `translate(${xPercent * 0.15}px, ${yPercent * 0.15}px)`;
-            glow2.style.transform = `translate(${-xPercent * 0.12}px, ${-yPercent * 0.12}px)`;
-            
-            isMouseScheduled = false;
-        }
-
-        heroSection.addEventListener('mousemove', (e) => {
-            mouseX = e.clientX;
-            mouseY = e.clientY;
-            if (!isMouseScheduled) {
-                isMouseScheduled = true;
-                window.requestAnimationFrame(updateGlowPosition);
-            }
-        }, { passive: true });
-        
-        heroSection.addEventListener('mouseleave', () => {
-            if (isMouseScheduled) {
-                isMouseScheduled = false;
-            }
-            glow1.style.transform = '';
-            glow2.style.transform = '';
-        });
-    }
 
     // 20. Floating Particles Background in Hero Section (inserted at start to be behind profile photo)
     if (heroSection) {
@@ -1278,7 +1267,8 @@ document.addEventListener('DOMContentLoaded', () => {
             particlesContainer.appendChild(particle);
         }
 
-        // Optimization: Pause floating particles and floaty image animations when hero is offscreen to save CPU/GPU cycles
+        // Optimization: Pause floating particles and floaty image animations when hero is offscreen
+        // R4: profileWrapper declared here (inner scope), not re-declared below
         const profileWrapper = document.querySelector('.profile-image-wrapper');
         const heroObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
@@ -1299,114 +1289,116 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 21. High-Performance Stereoscopic 3D Parallax and Tilt on Profile Photo
-    const hero = document.getElementById('home');
-    const profileImg = document.querySelector('.profile-img');
-    const glowCircle = document.querySelector('.glowing-border-circle');
-    const profileWrapper = document.querySelector('.profile-image-wrapper');
-    const heroName = document.querySelector('.hero-name');
+    // D1: Merged with section 19 glow handler — one rAF dispatch covers both effects
+    const profileImg    = document.querySelector('.profile-img');
+    const glowCircle    = document.querySelector('.glowing-border-circle');
+    const profileWrapper2 = document.querySelector('.profile-image-wrapper'); // outer-scope ref
+    const heroName      = document.querySelector('.hero-name');
 
-    if (hero && profileImg && glowCircle && profileWrapper) {
+    const hasGlow      = heroSection && glow1 && glow2;
+    const hasParallax  = heroSection && profileImg && glowCircle && profileWrapper2;
+
+    if (hasGlow || hasParallax) {
         let isScheduled = false;
         let mX = 0, mY = 0;
 
-        hero.addEventListener('mousemove', (e) => {
-            if (window.innerWidth < 768) return; // Skip on mobile to keep it lightweight
+        // R3: Set active transitions once on mouseenter, not inside every rAF frame
+        if (hasParallax) {
+            heroSection.addEventListener('mouseenter', () => {
+                if (window.innerWidth < 768) return;
+                const t = 'transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1)';
+                profileWrapper2.style.transition = t;
+                profileImg.style.transition      = t;
+                glowCircle.style.transition      = t;
+                profileWrapper2.style.animation  = 'none';
+            }, { passive: true });
+        }
+
+        // Single merged mousemove handler — both glow and parallax run in one rAF
+        heroSection.addEventListener('mousemove', (e) => {
             mX = e.clientX;
             mY = e.clientY;
 
             if (!isScheduled) {
                 isScheduled = true;
                 requestAnimationFrame(() => {
-                    if (!heroRect) return;
-                    const relX = mX - heroRect.left - heroRect.width / 2;
-                    const relY = mY - heroRect.top - heroRect.height / 2;
+                    if (!heroRect) { isScheduled = false; return; }
 
-                    const normX = relX / (heroRect.width / 2);
-                    const normY = relY / (heroRect.height / 2);
+                    // --- Glow circles (always run when glows exist) ---
+                    if (hasGlow) {
+                        const x = mX - heroRect.left;
+                        const y = mY - heroRect.top;
+                        const xPercent = (x / heroRect.width)  * 100;
+                        const yPercent = (y / heroRect.height) * 100;
+                        glow1.style.transform = `translate(${xPercent * 0.15}px, ${yPercent * 0.15}px)`;
+                        glow2.style.transform = `translate(${-xPercent * 0.12}px, ${-yPercent * 0.12}px)`;
+                    }
 
-                    // 3D Tilt angles (max 10 degrees) for the frame wrapper
-                    const tiltX = -normY * 10;
-                    const tiltY = normX * 10;
+                    // --- 3D Parallax + Tilt (desktop only) ---
+                    if (hasParallax && window.innerWidth >= 768) {
+                        const relX  = mX - heroRect.left  - heroRect.width  / 2;
+                        const relY  = mY - heroRect.top   - heroRect.height / 2;
+                        const normX = relX / (heroRect.width  / 2);
+                        const normY = relY / (heroRect.height / 2);
 
-                    // Parallax translations (image moves with mouse, glow moves opposite)
-                    const imgDist = 14;   // Max image shift
-                    const glowDist = -12; // Max glow shift in opposite direction
+                        // 3D Tilt (max 10°)
+                        profileWrapper2.style.transform = `perspective(1000px) rotateX(${-normY * 10}deg) rotateY(${normX * 10}deg)`;
 
-                    const moveImgX = normX * imgDist;
-                    const moveImgY = normY * imgDist;
-                    const moveGlowX = normX * glowDist;
-                    const moveGlowY = normY * glowDist;
+                        // Image pops toward mouse; glow slides opposite
+                        profileImg.style.transform  = `translate3d(${normX * 14}px, ${normY * 14}px, 25px) scale(1.02)`;
+                        glowCircle.style.transform  = `translate3d(${normX * -12}px, ${normY * -12}px, 0)`;
 
-                    // Apply a smooth, damped transition so the elements follow the mouse with a natural, organic flow
-                    profileWrapper.style.transition = 'transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1)';
-                    profileImg.style.transition = 'transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1)';
-                    glowCircle.style.transition = 'transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1)';
-
-                    // Pause the floaty animation so it doesn't conflict with active mouse movement
-                    profileWrapper.style.animation = 'none';
-
-                    // Apply 3D perspective and tilt to wrapper
-                    profileWrapper.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
-
-                    // Pop the avatar forward and slide it towards the mouse in 3D space
-                    profileImg.style.transform = `translate3d(${moveImgX}px, ${moveImgY}px, 25px) scale(1.02)`;
-                    
-                    // Slide the rotating glow in the opposite direction
-                    glowCircle.style.transform = `translate3d(${moveGlowX}px, ${moveGlowY}px, 0)`;
-
-                    // 3D Extruded text shadow parallax for the title
-                    if (heroName) {
-                        const isLight = document.body.classList.contains('light-theme');
-                        
-                        // We project the shadow in the opposite direction of the mouse to simulate light source
-                        const shadowX = -normX * 8; 
-                        const shadowY = -normY * 8;
-
-                        if (isLight) {
+                        // Extruded text-shadow parallax for hero name
+                        if (heroName) {
+                            const isLight  = document.body.classList.contains('light-theme');
+                            const shadowX  = -normX * 8;
+                            const shadowY  = -normY * 8;
+                            const c1 = isLight ? 'rgba(2,132,199,'   : 'rgba(0,242,254,';
+                            const c2 = isLight ? 'rgba(37,99,235,'   : 'rgba(79,172,254,';
+                            const c3 = isLight ? 'rgba(0,0,0,0.12)'  : 'rgba(0,0,0,0.55)';
                             heroName.style.textShadow = `
-                                ${shadowX * 0.15}px ${shadowY * 0.15}px 0px rgba(2, 132, 199, 0.85),
-                                ${shadowX * 0.3}px ${shadowY * 0.3}px 0px rgba(2, 132, 199, 0.7),
-                                ${shadowX * 0.45}px ${shadowY * 0.45}px 0px rgba(37, 99, 235, 0.55),
-                                ${shadowX * 0.6}px ${shadowY * 0.6}px 0px rgba(37, 99, 235, 0.4),
-                                ${shadowX * 0.8}px ${shadowY * 0.8}px 8px rgba(0, 0, 0, 0.12)
-                            `;
-                        } else {
-                            heroName.style.textShadow = `
-                                ${shadowX * 0.15}px ${shadowY * 0.15}px 0px rgba(0, 242, 254, 0.9),
-                                ${shadowX * 0.3}px ${shadowY * 0.3}px 0px rgba(0, 242, 254, 0.75),
-                                ${shadowX * 0.45}px ${shadowY * 0.45}px 0px rgba(79, 172, 254, 0.6),
-                                ${shadowX * 0.6}px ${shadowY * 0.6}px 0px rgba(79, 172, 254, 0.45),
-                                ${shadowX * 0.8}px ${shadowY * 0.8}px 10px rgba(0, 0, 0, 0.55)
+                                ${shadowX*0.15}px ${shadowY*0.15}px 0px ${c1}${isLight?'0.85':'0.9'}),
+                                ${shadowX*0.3}px  ${shadowY*0.3}px  0px ${c1}${isLight?'0.7':'0.75'}),
+                                ${shadowX*0.45}px ${shadowY*0.45}px 0px ${c2}${isLight?'0.55':'0.6'}),
+                                ${shadowX*0.6}px  ${shadowY*0.6}px  0px ${c2}${isLight?'0.4':'0.45'}),
+                                ${shadowX*0.8}px  ${shadowY*0.8}px  ${isLight?'8':'10'}px ${c3}
                             `;
                         }
                     }
-                    
+
                     isScheduled = false;
                 });
             }
         }, { passive: true });
 
-        hero.addEventListener('mouseleave', () => {
-            requestAnimationFrame(() => {
-                // Restore default smooth floaty state and reset 3D overrides
-                profileWrapper.style.transition = 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)';
-                profileWrapper.style.transform = '';
-                profileImg.style.transition    = 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)';
-                profileImg.style.transform = '';
-                glowCircle.style.transition    = 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)';
-                glowCircle.style.transform = '';
-                if (heroName) heroName.style.textShadow = '';
+        heroSection.addEventListener('mouseleave', () => {
+            // Reset glow circles
+            if (hasGlow) {
+                glow1.style.transform = '';
+                glow2.style.transform = '';
+            }
 
-                // Re-enable the float animation after the transition settles
-                setTimeout(() => {
-                    profileWrapper.style.transition = '';
-                    profileImg.style.transition    = '';
-                    glowCircle.style.transition    = '';
-                    profileWrapper.style.animation = 'floaty 7s ease-in-out infinite';
-                }, 820);
-            });
+            // Reset parallax with slow ease-out, then restore float animation
+            if (hasParallax) {
+                requestAnimationFrame(() => {
+                    const tOut = 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)';
+                    profileWrapper2.style.transition = tOut;
+                    profileWrapper2.style.transform  = '';
+                    profileImg.style.transition      = tOut;
+                    profileImg.style.transform       = '';
+                    glowCircle.style.transition      = tOut;
+                    glowCircle.style.transform       = '';
+                    if (heroName) heroName.style.textShadow = '';
+
+                    setTimeout(() => {
+                        profileWrapper2.style.transition = '';
+                        profileImg.style.transition      = '';
+                        glowCircle.style.transition      = '';
+                        profileWrapper2.style.animation  = 'floaty 7s ease-in-out infinite';
+                    }, 820);
+                });
+            }
         });
     }
 });
-
 
